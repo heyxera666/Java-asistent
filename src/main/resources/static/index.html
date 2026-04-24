@@ -52,6 +52,17 @@
             opacity: 0.9;
         }
 
+        .time-display {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 500;
+            margin-top: 10px;
+            text-align: center;
+            font-family: 'Courier New', monospace;
+        }
+
         .chat-area {
             flex: 1;
             overflow-y: auto;
@@ -241,6 +252,9 @@
         <div class="header">
             <h1>🤖 Personal Assistant</h1>
             <p>Ваш персональный помощник в браузере</p>
+            <div class="time-display" id="timeDisplay">
+                📅 Загрузка...
+            </div>
         </div>
 
         <div class="chat-area" id="chatArea">
@@ -269,6 +283,22 @@
     <script>
         let isLoading = false;
         let timerInterval = null;
+
+        // Обновлять время каждую секунду
+        function updateClock() {
+            const now = new Date();
+            const days = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"];
+            const dayOfWeek = days[now.getDay() === 0 ? 6 : now.getDay() - 1];
+            
+            const dateStr = `${String(now.getDate()).padStart(2, '0')}.${String(now.getMonth() + 1).padStart(2, '0')}.${now.getFullYear()}`;
+            const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
+            
+            document.getElementById('timeDisplay').textContent = `📅 ${dateStr} (${dayOfWeek}) ⏰ ${timeStr}`;
+        }
+
+        // Инициализировать часы
+        updateClock();
+        setInterval(updateClock, 1000);
 
         // Отправить команду по Enter
         document.getElementById('inputField').addEventListener('keypress', function(e) {
