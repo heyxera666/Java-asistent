@@ -1,52 +1,123 @@
 package com.personalassistant;
 
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Scanner;
 
 /**
- * Personal Assistant - консольное Java-приложение.
- * Цель: выполнять команды пользователя и расширяться.
+ * Personal Assistant - оконное Java-приложение (Swing).
+ * Цель: выполнять команды пользователя в графическом интерфейсе.
  */
 public class PersonalAssistant {
 
     private static List<String> notes = new ArrayList<>();
+    private static JTextArea chatArea;
+    private static JTextField inputField;
 
     public static void main(String[] args) {
-        Scanner scanner = new Scanner(System.in);
-        System.out.println("Привет! Я Personal Assistant. Введите команду (help для списка):");
+        // Создаем графический интерфейс в потоке обработки событий (EDT)
+        SwingUtilities.invokeLater(() -> {
+            createAndShowGUI();
+        });
+    }
 
-        while (true) {
-            System.out.print("> ");
-            String input = scanner.nextLine().trim();
-            String command = input.toLowerCase();
+    private static void createAndShowGUI() {
+        JFrame frame = new JFrame("Personal Assistant");
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setSize(500, 600);
+        frame.setLayout(new BorderLayout());
 
-            if (command.equals("hello")) {
-                System.out.println("Привет! Как я могу помочь?");
-            } else if (command.equals("help")) {
-                showHelp();
-            } else if (command.equals("exit")) {
-                System.out.println("До свидания!");
-                scanner.close();
-                return;
-            } else if (command.startsWith("note ")) {
-                handleNote(input.substring(5).trim());
-            } else if (command.startsWith("timer ")) {
-                handleTimer(input.substring(6).trim());
-            } else {
-                System.out.println("Неизвестная команда. Введите 'help' для списка.");
+        // Область для вывода текста (чат)
+        chatArea = new JTextArea();
+        chatArea.setEditable(false);
+        chatArea.setLineWrap(true);
+        chatArea.setWrapStyleWord(true);
+        chatArea.setFont(new Font("SansSerif", Font.PLAIN, 14));
+        chatArea.setBackground(new Color(30, 30, 30));
+        chatArea.setForeground(new Color(220, 220, 220));
+        
+        JScrollPane scrollPane = new JScrollPane(chatArea);
+        frame.add(scrollPane, BorderLayout.CENTER);
+
+        // Панель ввода внизу
+        JPanel inputPanel = new JPanel();
+        inputPanel.setLayout(new BorderLayout());
+        
+        inputField = new JTextField();
+        inputField.setFont(new Font("SansSerif", Font.PLAIN, 16));
+        inputField.setBackground(new Color(50, 50, 50));
+        inputField.setForeground(Color.WHITE);
+        inputField.setCaretColor(Color.WHITE);
+        
+        JButton sendButton = new JButton("Отправить");
+        sendButton.setBackground(new Color(70, 130, 180));
+        sendButton.setForeground(Color.WHITE);
+
+        inputPanel.add(inputField, BorderLayout.CENTER);
+        inputPanel.add(sendButton, BorderLayout.EAST);
+        
+        frame.add(inputPanel, BorderLayout.SOUTH);
+
+        // Обработка ввода
+        ActionListener actionListener = new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                String input = inputField.getText().trim();
+                if (!input.isEmpty()) {
+                    printMessage("Вы", input);
+                    processCommand(input);
+                    inputField.setText("");
+                }
             }
+        };
+
+        inputField.addActionListener(actionListener);
+        sendButton.addActionListener(actionListener);
+
+        frame.setLocationRelativeTo(null); // По центру экрана
+        frame.setVisible(true);
+
+        printMessage("Ассистент", "Привет! Я Personal Assistant. Введите команду (help для списка).");
+    }
+
+    private static void printMessage(String sender, String message) {
+        chatArea.append("[" + sender + "]: " + message + "\n\n");
+        // Прокрутка вниз
+        chatArea.setCaretPosition(chatArea.getDocument().getLength());
+    }
+
+    private static void processCommand(String input) {
+        String command = input.toLowerCase();
+
+        if (command.equals("hello")) {
+            printMessage("Ассистент", "Привет! Как я могу помочь?");
+        } else if (command.equals("help")) {
+            showHelp();
+        } else if (command.equals("exit")) {
+            printMessage("Ассистент", "До свидания!");
+            System.exit(0);
+        } else if (command.startsWith("note ")) {
+            handleNote(input.substring(5).trim());
+        } else if (command.startsWith("timer ")) {
+            handleTimer(input.substring(6).trim());
+        } else {
+            printMessage("Ассистент", "Неизвестная команда. Введите 'help' для списка.");
         }
     }
 
     private static void showHelp() {
-        System.out.println("Доступные команды:");
-        System.out.println("- hello: приветствие");
-        System.out.println("- help: показать эту справку");
-        System.out.println("- note add <текст>: добавить заметку");
-        System.out.println("- note list: показать все заметки");
-        System.out.println("- timer <секунды>: запустить таймер");
-        System.out.println("- exit: выйти из программы");
+        StringBuilder sb = new StringBuilder();
+        sb.append("Доступные команды:\n");
+        sb.append("- hello: приветствие\n");
+        sb.append("- help: показать эту справку\n");
+        sb.append("- note add <текст>: добавить заметку\n");
+        sb.append("- note list: показать все заметки\n");
+        sb.append("- timer <секунды>: запустить таймер\n");
+        sb.append("- exit: выйти из программы");
+        printMessage("Ассистент", sb.toString());
     }
 
     private static void handleNote(String subCommand) {
@@ -54,21 +125,22 @@ public class PersonalAssistant {
             String text = subCommand.substring(4).trim();
             if (!text.isEmpty()) {
                 notes.add(text);
-                System.out.println("Заметка добавлена: " + text);
+                printMessage("Ассистент", "Заметка добавлена: " + text);
             } else {
-                System.out.println("Текст заметки пустой.");
+                printMessage("Ассистент", "Текст заметки пустой.");
             }
         } else if (subCommand.equals("list")) {
             if (notes.isEmpty()) {
-                System.out.println("Заметок нет.");
+                printMessage("Ассистент", "Заметок нет.");
             } else {
-                System.out.println("Ваши заметки:");
+                StringBuilder sb = new StringBuilder("Ваши заметки:\n");
                 for (int i = 0; i < notes.size(); i++) {
-                    System.out.println((i + 1) + ". " + notes.get(i));
+                    sb.append((i + 1)).append(". ").append(notes.get(i)).append("\n");
                 }
+                printMessage("Ассистент", sb.toString().trim());
             }
         } else {
-            System.out.println("Неверная команда заметок. Используйте 'note add <текст>' или 'note list'.");
+            printMessage("Ассистент", "Неверная команда заметок. Используйте 'note add <текст>' или 'note list'.");
         }
     }
 
@@ -78,20 +150,27 @@ public class PersonalAssistant {
             if (seconds > 0) {
                 startTimer(seconds);
             } else {
-                System.out.println("Время должно быть положительным числом.");
+                printMessage("Ассистент", "Время должно быть положительным числом.");
             }
         } catch (NumberFormatException e) {
-            System.out.println("Неверный формат времени. Введите число секунд.");
+            printMessage("Ассистент", "Неверный формат времени. Введите число секунд.");
         }
     }
 
     private static void startTimer(int seconds) {
-        System.out.println("Таймер запущен на " + seconds + " секунд.");
-        try {
-            Thread.sleep(seconds * 1000L);
-            System.out.println("Время вышло!");
-        } catch (InterruptedException e) {
-            System.out.println("Таймер прерван.");
-        }
+        printMessage("Ассистент", "Таймер запущен на " + seconds + " секунд.");
+        
+        // Запускаем таймер в отдельном потоке, чтобы не зависало окно (Swing EDT)
+        new Thread(() -> {
+            try {
+                Thread.sleep(seconds * 1000L);
+                SwingUtilities.invokeLater(() -> {
+                    printMessage("Ассистент", "⏰ Время вышло! Прошло " + seconds + " секунд.");
+                    Toolkit.getDefaultToolkit().beep(); // Звуковой сигнал
+                });
+            } catch (InterruptedException e) {
+                SwingUtilities.invokeLater(() -> printMessage("Ассистент", "Таймер прерван."));
+            }
+        }).start();
     }
 }
