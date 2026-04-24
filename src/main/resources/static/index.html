@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Personal Assistant</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 10px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-direction: column;
+            height: 90vh;
+            max-height: 800px;
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            border-radius: 15px 15px 0 0;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 5px;
+        }
+
+        .header p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .chat-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            background: #f9f9f9;
+        }
+
+        .message {
+            margin-bottom: 15px;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message.user {
+            text-align: right;
+        }
+
+        .message-content {
+            display: inline-block;
+            max-width: 80%;
+            padding: 12px 15px;
+            border-radius: 15px;
+            word-wrap: break-word;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+
+        .message.user .message-content {
+            background: #667eea;
+            color: white;
+            border-radius: 15px 5px 15px 15px;
+        }
+
+        .message.assistant .message-content {
+            background: #e0e0e0;
+            color: #333;
+            border-radius: 5px 15px 15px 15px;
+        }
+
+        .input-area {
+            padding: 15px;
+            background: white;
+            border-top: 1px solid #e0e0e0;
+            display: flex;
+            gap: 10px;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+            width: 100%;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 25px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+            font-family: inherit;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        button {
+            padding: 12px 25px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .notes-toggle {
+            background: #764ba2;
+            padding: 10px 20px;
+            margin: 10px;
+            width: auto;
+            margin-left: auto;
+            margin-right: 10px;
+        }
+
+        .notes-panel {
+            display: none;
+            background: #f0f0f0;
+            border-top: 1px solid #e0e0e0;
+            padding: 15px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .notes-panel.active {
+            display: block;
+        }
+
+        .notes-list {
+            list-style: none;
+        }
+
+        .notes-list li {
+            padding: 10px;
+            background: white;
+            margin-bottom: 8px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .notes-list button {
+            padding: 5px 10px;
+            font-size: 12px;
+            background: #ff6b6b;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #667eea;
+            animation: loading 1.4s infinite;
+            margin: 0 2px;
+        }
+
+        @keyframes loading {
+            0%, 100% {
+                opacity: 0.3;
+            }
+            50% {
+                opacity: 1;
+            }
+        }
+
+        .timer-display {
+            font-size: 24px;
+            font-weight: bold;
+            color: #667eea;
+            text-align: center;
+            margin: 10px 0;
+        }
+
+        @media (max-width: 500px) {
+            .container {
+                max-height: 100vh;
+                border-radius: 0;
+            }
+
+            .header h1 {
+                font-size: 22px;
+            }
+
+            .message-content {
+                max-width: 95%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🤖 Personal Assistant</h1>
+            <p>Ваш персональный помощник в браузере</p>
+        </div>
+
+        <div class="chat-area" id="chatArea">
+            <div class="message assistant">
+                <div class="message-content">
+                    👋 Привет! Я Personal Assistant. Введите команду или напишите <strong>help</strong> для списка команд.
+                </div>
+            </div>
+        </div>
+
+        <div class="notes-panel" id="notesPanel">
+            <h3>📝 Заметки</h3>
+            <ul class="notes-list" id="notesList"></ul>
+            <button onclick="clearAllNotes()" style="width: 100%; margin-top: 10px; background: #ff6b6b;">Очистить все</button>
+        </div>
+
+        <div class="input-area">
+            <div class="input-group">
+                <input type="text" id="inputField" placeholder="Введите команду..." autocomplete="off">
+                <button onclick="sendCommand()">Отправить</button>
+                <button class="notes-toggle" onclick="toggleNotesPanel()">📝</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let isLoading = false;
+        let timerInterval = null;
+
+        // Отправить команду по Enter
+        document.getElementById('inputField').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && !isLoading) {
+                sendCommand();
+            }
+        });
+
+        // Отправить команду
+        async function sendCommand() {
+            const input = document.getElementById('inputField').value.trim();
+            
+            if (!input || isLoading) return;
+
+            isLoading = true;
+            
+            // Добавить сообщение пользователя
+            addMessage('user', input);
+            document.getElementById('inputField').value = '';
+
+            try {
+                const response = await fetch('/api/assistant/command', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ command: input })
+                });
+
+                const data = await response.json();
+                addMessage('assistant', data.response);
+
+                // Обновить список заметок
+                if (input.toLowerCase().startsWith('note')) {
+                    setTimeout(updateNotesList, 500);
+                }
+
+                // Обработать таймер
+                if (input.toLowerCase().startsWith('timer')) {
+                    handleTimer(input);
+                }
+
+            } catch (error) {
+                console.error('Ошибка:', error);
+                addMessage('assistant', '❌ Ошибка при обработке команды. Попробуйте еще раз.');
+            } finally {
+                isLoading = false;
+            }
+        }
+
+        // Добавить сообщение в чат
+        function addMessage(sender, text) {
+            const chatArea = document.getElementById('chatArea');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message ' + sender;
+            
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'message-content';
+            contentDiv.innerHTML = text.replace(/\n/g, '<br>');
+            
+            messageDiv.appendChild(contentDiv);
+            chatArea.appendChild(messageDiv);
+            
+            // Прокрутить вниз
+            chatArea.scrollTop = chatArea.scrollHeight;
+        }
+
+        // Показать/скрыть панель заметок
+        function toggleNotesPanel() {
+            const panel = document.getElementById('notesPanel');
+            panel.classList.toggle('active');
+            if (panel.classList.contains('active')) {
+                updateNotesList();
+            }
+        }
+
+        // Обновить список заметок
+        async function updateNotesList() {
+            try {
+                const response = await fetch('/api/assistant/notes');
+                const data = await response.json();
+                const notesList = document.getElementById('notesList');
+                
+                notesList.innerHTML = '';
+                
+                if (data.notes.length === 0) {
+                    notesList.innerHTML = '<li style="text-align: center; color: #999;">Нет заметок</li>';
+                } else {
+                    data.notes.forEach((note, index) => {
+                        const li = document.createElement('li');
+                        li.innerHTML = `
+                            <span>${note}</span>
+                            <button onclick="deleteNote(${index + 1})">❌</button>
+                        `;
+                        notesList.appendChild(li);
+                    });
+                }
+            } catch (error) {
+                console.error('Ошибка при загрузке заметок:', error);
+            }
+        }
+
+        // Удалить заметку
+        function deleteNote(index) {
+            sendCommand_Direct('note delete ' + index);
+        }
+
+        // Отправить команду напрямую
+        async function sendCommand_Direct(command) {
+            try {
+                const response = await fetch('/api/assistant/command', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ command: command })
+                });
+
+                const data = await response.json();
+                setTimeout(updateNotesList, 300);
+            } catch (error) {
+                console.error('Ошибка:', error);
+            }
+        }
+
+        // Очистить все заметки
+        async function clearAllNotes() {
+            if (confirm('Вы уверены? Все заметки будут удалены!')) {
+                try {
+                    await fetch('/api/assistant/notes', { method: 'DELETE' });
+                    updateNotesList();
+                    addMessage('assistant', '🗑️ Все заметки удалены.');
+                } catch (error) {
+                    console.error('Ошибка:', error);
+                }
+            }
+        }
+
+        // Обработать таймер
+        function handleTimer(input) {
+            const match = input.match(/timer\s+(\d+)/i);
+            if (match) {
+                const seconds = parseInt(match[1]);
+                startTimer(seconds);
+            }
+        }
+
+        // Запустить таймер
+        function startTimer(seconds) {
+            let remaining = seconds;
+            
+            // Добавить элемент таймера
+            const chatArea = document.getElementById('chatArea');
+            const timerDiv = document.createElement('div');
+            timerDiv.id = 'timerDisplay';
+            timerDiv.className = 'message assistant';
+            timerDiv.innerHTML = '<div class="message-content"><div class="timer-display" id="timerCount">' + remaining + 's</div></div>';
+            chatArea.appendChild(timerDiv);
+            chatArea.scrollTop = chatArea.scrollHeight;
+
+            // Обновлять каждую секунду
+            if (timerInterval) clearInterval(timerInterval);
+            
+            timerInterval = setInterval(() => {
+                remaining--;
+                document.getElementById('timerCount').textContent = remaining + 's';
+                
+                if (remaining <= 0) {
+                    clearInterval(timerInterval);
+                    document.getElementById('timerCount').textContent = '⏰ Время вышло!';
+                    document.getElementById('timerCount').style.color = '#ff6b6b';
+                    
+                    // Звуковой сигнал
+                    playBeep();
+                }
+            }, 1000);
+        }
+
+        // Воспроизвести звук
+        function playBeep() {
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.frequency.value = 800;
+            oscillator.type = 'sine';
+            
+            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+            
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 0.5);
+        }
+    </script>
+</body>
+</html>
