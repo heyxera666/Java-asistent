@@ -38,6 +38,12 @@ public class AssistantService {
             return handleNote(input.substring(5).trim());
         } else if (command.startsWith("timer ")) {
             return handleTimer(input.substring(6).trim());
+        } else if (command.startsWith("calc ")) {
+            return calculate(input.substring(5).trim());
+        } else if (command.startsWith("convert ")) {
+            return convert(input.substring(8).trim());
+        } else if (command.startsWith("pomodoro")) {
+            return handlePomodoro(input.substring(8).trim());
         } else {
             return "Неизвестная команда. Введите 'help' для списка доступных команд.";
         }
@@ -52,11 +58,16 @@ public class AssistantService {
                 "• help - показать эту справку\n" +
                 "• time - показать текущее время\n" +
                 "• date - показать дату\n" +
-                "• weather - информация о погоде\n" +
+                "• weather <город> - информация о погоде\n" +
                 "• note add <текст> - добавить заметку\n" +
                 "• note list - показать все заметки\n" +
                 "• note delete <номер> - удалить заметку\n" +
-                "• timer <секунды> - запустить таймер";
+                "• note search <текст> - поиск по заметкам\n" +
+                "• timer <секунды> - запустить таймер\n" +
+                "• calc <выражение> - калькулятор (например: calc 2+2*3)\n" +
+                "• convert <число> <из> to <в> - конвертер (usd/eur/rub/km/mi/kg/lb/c/f)\n" +
+                "• pomodoro start - запустить помодоро (25 мин)\n" +
+                "• pomodoro break - короткий перерыв (5 мин)";
     }
 
     /**
@@ -135,6 +146,17 @@ public class AssistantService {
                 }
                 return sb.toString().trim();
             }
+        } else if (subCommand.startsWith("search ")) {
+            String query = subCommand.substring(7).trim().toLowerCase();
+            if (query.isEmpty()) return "❌ Введите текст для поиска.";
+            List<String> found = new ArrayList<>();
+            for (int i = 0; i < notes.size(); i++) {
+                if (notes.get(i).toLowerCase().contains(query)) {
+                    found.add((i + 1) + ". " + notes.get(i));
+                }
+            }
+            if (found.isEmpty()) return "🔍 Заметки не найдены по запросу: " + query;
+            return "🔍 Найдено:\n" + String.join("\n", found);
         } else if (subCommand.startsWith("delete ")) {
             try {
                 int index = Integer.parseInt(subCommand.substring(7).trim()) - 1;
@@ -150,6 +172,155 @@ public class AssistantService {
         } else {
             return "❌ Неверная команда. Используйте 'note add <текст>', 'note list' или 'note delete <номер>'.";
         }
+    }
+
+    /**
+     * Калькулятор.
+     */
+    private String calculate(String expr) {
+        if (expr.isEmpty()) return "❌ Введите выражение. Пример: calc 2+2";
+        try {
+            double result = evalExpr(expr.replaceAll("\\s+", ""));
+            String formatted = result == (long) result ? String.valueOf((long) result) : String.valueOf(result);
+            return "🧮 " + expr + " = " + formatted;
+        } catch (Exception e) {
+            return "❌ Ошибка в выражении: " + expr;
+        }
+    }
+
+    private double evalExpr(String expr) {
+        // Поддержка +, -, *, /, скобок
+        return new Object() {
+            int pos = 0;
+            double parse() {
+                double x = parseTerm();
+                while (pos < expr.length()) {
+                    if (expr.charAt(pos) == '+') { pos++; x += parseTerm(); }
+                    else if (expr.charAt(pos) == '-') { pos++; x -= parseTerm(); }
+                    else break;
+                }
+                return x;
+            }
+            double parseTerm() {
+                double x = parseFactor();
+                while (pos < expr.length()) {
+                    if (expr.charAt(pos) == '*') { pos++; x *= parseFactor(); }
+                    else if (expr.charAt(pos) == '/') { pos++; x /= parseFactor(); }
+                    else break;
+                }
+                return x;
+            }
+            double parseFactor() {
+                if (pos < expr.length() && expr.charAt(pos) == '(') {
+                    pos++;
+                    double x = parse();
+                    pos++; // ')'
+                    return x;
+                }
+                int start = pos;
+                if (pos < expr.length() && expr.charAt(pos) == '-') pos++;
+                while (pos < expr.length() && (Character.isDigit(expr.charAt(pos)) || expr.charAt(pos) == '.')) pos++;
+                return Double.parseDouble(expr.substring(start, pos));
+            }
+        }.parse();
+    }
+
+    /**
+     * Конвертер единиц и валют.
+     */
+    private String convert(String input) {
+        // Формат: <число> <из> to <в>
+        String[] parts = input.toLowerCase().split("\\s+to\\s+");
+        if (parts.length != 2) return "❌ Формат: convert <число> <единица> to <единица>\nПример: convert 100 usd to eur";
+        String[] fromParts = parts[0].trim().split("\\s+");
+        if (fromParts.length != 2) return "❌ Формат: convert <число> <единица> to <единица>";
+        double value;
+        try { value = Double.parseDouble(fromParts[0]); } catch (NumberFormatException e) { return "❌ Неверное число."; }
+        String from = fromParts[1];
+        String to = parts[1].trim();
+        double result = convertValue(value, from, to);
+        if (Double.isNaN(result)) return "❌ Неизвестные единицы: " + from + " → " + to;
+        String formatted = result == (long) result ? String.valueOf((long) result) : String.format("%.4f", result);
+        return String.format("🔄 %s %s = %s %s", fromParts[0], from.toUpperCase(), formatted, to.toUpperCase());
+    }
+
+    private double convertValue(double v, String from, String to) {
+        // Конвертируем в базовую единицу, затем в целевую
+        double base = toBase(v, from);
+        if (Double.isNaN(base)) return Double.NaN;
+        return fromBase(base, from, to);
+    }
+
+    private double toBase(double v, String unit) {
+        return switch (unit) {
+            // Валюты (в USD)
+            case "usd" -> v;
+            case "eur" -> v / 0.92;
+            case "rub" -> v / 90.0;
+            case "gbp" -> v / 0.79;
+            // Длина (в км)
+            case "km" -> v;
+            case "mi" -> v * 1.60934;
+            case "m" -> v / 1000.0;
+            case "ft" -> v * 0.0003048;
+            // Вес (в кг)
+            case "kg" -> v;
+            case "lb" -> v * 0.453592;
+            case "g" -> v / 1000.0;
+            // Температура (в Цельсий)
+            case "c" -> v;
+            case "f" -> (v - 32) * 5.0 / 9.0;
+            case "k" -> v - 273.15;
+            default -> Double.NaN;
+        };
+    }
+
+    private double fromBase(double base, String from, String to) {
+        // Определяем группу единиц
+        String[] currencies = {"usd", "eur", "rub", "gbp"};
+        String[] lengths = {"km", "mi", "m", "ft"};
+        String[] weights = {"kg", "lb", "g"};
+        String[] temps = {"c", "f", "k"};
+        if (!sameGroup(from, to, currencies) && !sameGroup(from, to, lengths) &&
+            !sameGroup(from, to, weights) && !sameGroup(from, to, temps)) return Double.NaN;
+        return switch (to) {
+            case "usd" -> base;
+            case "eur" -> base * 0.92;
+            case "rub" -> base * 90.0;
+            case "gbp" -> base * 0.79;
+            case "km" -> base;
+            case "mi" -> base / 1.60934;
+            case "m" -> base * 1000.0;
+            case "ft" -> base / 0.0003048;
+            case "kg" -> base;
+            case "lb" -> base / 0.453592;
+            case "g" -> base * 1000.0;
+            case "c" -> base;
+            case "f" -> base * 9.0 / 5.0 + 32;
+            case "k" -> base + 273.15;
+            default -> Double.NaN;
+        };
+    }
+
+    private boolean sameGroup(String a, String b, String[] group) {
+        boolean hasA = false, hasB = false;
+        for (String s : group) { if (s.equals(a)) hasA = true; if (s.equals(b)) hasB = true; }
+        return hasA && hasB;
+    }
+
+    /**
+     * Помодоро таймер.
+     */
+    private String handlePomodoro(String sub) {
+        sub = sub.trim().toLowerCase();
+        if (sub.equals("start") || sub.isEmpty()) {
+            return "🍅 POMODORO:25:00";
+        } else if (sub.equals("break")) {
+            return "☕ BREAK:05:00";
+        } else if (sub.equals("long break")) {
+            return "🛋️ LONGBREAK:15:00";
+        }
+        return "❌ Используйте: pomodoro start | pomodoro break | pomodoro long break";
     }
 
     /**

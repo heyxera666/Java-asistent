@@ -231,6 +231,47 @@
             margin: 10px 0;
         }
 
+        .autocomplete-list {
+            position: absolute;
+            bottom: 60px;
+            left: 15px;
+            right: 15px;
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            z-index: 100;
+            overflow: hidden;
+            display: none;
+        }
+
+        .autocomplete-item {
+            padding: 10px 15px;
+            cursor: pointer;
+            font-size: 13px;
+            border-bottom: 1px solid #f0f0f0;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .autocomplete-item:last-child { border-bottom: none; }
+        .autocomplete-item:hover, .autocomplete-item.selected { background: #f0f0ff; }
+        .autocomplete-item .hint { color: #999; font-size: 11px; }
+
+        .pomodoro-bar {
+            display: none;
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+            color: white;
+            padding: 10px 20px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 18px;
+            letter-spacing: 2px;
+        }
+
+        .pomodoro-bar.break { background: linear-gradient(135deg, #26de81, #20bf6b); }
+        .pomodoro-bar.active { display: block; }
+
         @media (max-width: 500px) {
             .container {
                 max-height: 100vh;
@@ -271,9 +312,12 @@
             <button onclick="clearAllNotes()" style="width: 100%; margin-top: 10px; background: #ff6b6b;">Очистить все</button>
         </div>
 
-        <div class="input-area">
+        <div class="pomodoro-bar" id="pomodoroBar">🍅 25:00</div>
+
+        <div class="input-area" style="position:relative;">
+            <div class="autocomplete-list" id="autocompleteList"></div>
             <div class="input-group">
-                <input type="text" id="inputField" placeholder="Введите команду..." autocomplete="off">
+                <input type="text" id="inputField" placeholder="Введите команду... (Tab для подсказок)" autocomplete="off">
                 <button onclick="sendCommand()">Отправить</button>
                 <button class="notes-toggle" onclick="toggleNotesPanel()">📝</button>
             </div>
@@ -283,6 +327,26 @@
     <script>
         let isLoading = false;
         let timerInterval = null;
+        let pomodoroInterval = null;
+        let autocompleteIndex = -1;
+
+        const COMMANDS = [
+            { cmd: 'hello', hint: 'Приветствие' },
+            { cmd: 'help', hint: 'Список команд' },
+            { cmd: 'time', hint: 'Текущее время' },
+            { cmd: 'date', hint: 'Текущая дата' },
+            { cmd: 'weather ', hint: 'Погода в городе' },
+            { cmd: 'note add ', hint: 'Добавить заметку' },
+            { cmd: 'note list', hint: 'Показать заметки' },
+            { cmd: 'note delete ', hint: 'Удалить заметку по номеру' },
+            { cmd: 'note search ', hint: 'Поиск по заметкам' },
+            { cmd: 'timer ', hint: 'Таймер в секундах' },
+            { cmd: 'calc ', hint: 'Калькулятор (пример: calc 2+2*3)' },
+            { cmd: 'convert ', hint: 'Конвертер (пример: convert 100 usd to eur)' },
+            { cmd: 'pomodoro start', hint: 'Помодоро 25 мин' },
+            { cmd: 'pomodoro break', hint: 'Перерыв 5 мин' },
+            { cmd: 'pomodoro long break', hint: 'Длинный перерыв 15 мин' },
+        ];
 
         // Обновлять время каждую секунду
         function updateClock() {
@@ -300,12 +364,83 @@
         updateClock();
         setInterval(updateClock, 1000);
 
-        // Отправить команду по Enter
-        document.getElementById('inputField').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter' && !isLoading) {
-                sendCommand();
+        // Автодополнение и навигация
+        document.getElementById('inputField').addEventListener('keydown', function(e) {
+            const list = document.getElementById('autocompleteList');
+            const items = list.querySelectorAll('.autocomplete-item');
+
+            if (e.key === 'Tab') {
+                e.preventDefault();
+                const val = this.value;
+                if (items.length === 0) {
+                    showAutocomplete(val);
+                } else if (items.length === 1) {
+                    this.value = items[0].dataset.cmd;
+                    hideAutocomplete();
+                } else if (autocompleteIndex >= 0) {
+                    this.value = items[autocompleteIndex].dataset.cmd;
+                    hideAutocomplete();
+                } else {
+                    autocompleteIndex = 0;
+                    updateSelection(items);
+                }
+            } else if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                autocompleteIndex = Math.min(autocompleteIndex + 1, items.length - 1);
+                updateSelection(items);
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                autocompleteIndex = Math.max(autocompleteIndex - 1, 0);
+                updateSelection(items);
+            } else if (e.key === 'Escape') {
+                hideAutocomplete();
+            } else if (e.key === 'Enter' && !isLoading) {
+                if (autocompleteIndex >= 0 && items.length > 0) {
+                    this.value = items[autocompleteIndex].dataset.cmd;
+                    hideAutocomplete();
+                } else {
+                    sendCommand();
+                }
             }
         });
+
+        document.getElementById('inputField').addEventListener('input', function() {
+            autocompleteIndex = -1;
+            showAutocomplete(this.value);
+        });
+
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.input-area')) hideAutocomplete();
+        });
+
+        function showAutocomplete(val) {
+            const list = document.getElementById('autocompleteList');
+            if (!val) { hideAutocomplete(); return; }
+            const matches = COMMANDS.filter(c => c.cmd.startsWith(val.toLowerCase()));
+            if (matches.length === 0) { hideAutocomplete(); return; }
+            list.innerHTML = matches.map(c =>
+                `<div class="autocomplete-item" data-cmd="${c.cmd}" onclick="selectAutocomplete('${c.cmd}')">
+                    <span>${c.cmd}</span><span class="hint">${c.hint}</span>
+                </div>`
+            ).join('');
+            list.style.display = 'block';
+        }
+
+        function hideAutocomplete() {
+            document.getElementById('autocompleteList').style.display = 'none';
+            autocompleteIndex = -1;
+        }
+
+        function updateSelection(items) {
+            items.forEach((el, i) => el.classList.toggle('selected', i === autocompleteIndex));
+            if (autocompleteIndex >= 0) items[autocompleteIndex].scrollIntoView({ block: 'nearest' });
+        }
+
+        function selectAutocomplete(cmd) {
+            document.getElementById('inputField').value = cmd;
+            hideAutocomplete();
+            document.getElementById('inputField').focus();
+        }
 
         // Отправить команду
         async function sendCommand() {
@@ -339,6 +474,15 @@
                 // Обработать таймер
                 if (input.toLowerCase().startsWith('timer')) {
                     handleTimer(input);
+                }
+
+                // Обработать помодоро
+                if (data.response.startsWith('🍅 POMODORO:')) {
+                    startPomodoro(25 * 60, false);
+                } else if (data.response.startsWith('☕ BREAK:')) {
+                    startPomodoro(5 * 60, true);
+                } else if (data.response.startsWith('🛋️ LONGBREAK:')) {
+                    startPomodoro(15 * 60, true);
                 }
 
             } catch (error) {
@@ -444,6 +588,29 @@
                 const seconds = parseInt(match[1]);
                 startTimer(seconds);
             }
+        }
+
+        // Помодоро
+        function startPomodoro(totalSeconds, isBreak) {
+            if (pomodoroInterval) clearInterval(pomodoroInterval);
+            const bar = document.getElementById('pomodoroBar');
+            bar.className = 'pomodoro-bar active' + (isBreak ? ' break' : '');
+            let remaining = totalSeconds;
+
+            function update() {
+                const m = String(Math.floor(remaining / 60)).padStart(2, '0');
+                const s = String(remaining % 60).padStart(2, '0');
+                bar.textContent = (isBreak ? '☕ ' : '🍅 ') + m + ':' + s;
+                if (remaining <= 0) {
+                    clearInterval(pomodoroInterval);
+                    bar.textContent = isBreak ? '☕ Перерыв окончен!' : '🍅 Помодоро завершено!';
+                    playBeep();
+                    setTimeout(() => { bar.className = 'pomodoro-bar'; }, 5000);
+                }
+                remaining--;
+            }
+            update();
+            pomodoroInterval = setInterval(update, 1000);
         }
 
         // Запустить таймер
