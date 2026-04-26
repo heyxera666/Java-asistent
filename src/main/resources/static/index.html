@@ -283,6 +283,9 @@
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
         }
+
+        .pomodoro-bar {
+            display: none;
             background: linear-gradient(135deg, #ff6b6b, #ee5a24);
             color: white;
             padding: 10px 20px;
@@ -315,7 +318,7 @@
     <div class="container">
         <div class="header">
             <h1>🤖 Personal Assistant</h1>
-            <p>Ваш персональный помощник в браузере</p>
+            <p>Ваш персональный помощник Ерасыл</p>
             <div class="time-display" id="timeDisplay">
                 📅 Загрузка...
             </div>
@@ -338,6 +341,7 @@
         <div class="mode-toggle">
             <button class="mode-btn active" id="cmdBtn" onclick="setMode('cmd')">⌨️ Команды</button>
             <button class="mode-btn" id="aiBtn" onclick="setMode('ai')">🤖 AI чат</button>
+            <button class="mode-btn" style="flex:0.4; background:#ff6b6b; color:white;" onclick="clearChat()" title="Очистить чат">🗑️</button>
         </div>
 
         <div class="pomodoro-bar" id="pomodoroBar">🍅 25:00</div>
@@ -366,6 +370,10 @@
             const input = document.getElementById('inputField');
             input.placeholder = mode === 'ai' ? 'Спросите что угодно у AI...' : 'Введите команду... (Tab для подсказок)';
             hideAutocomplete();
+            // Загрузить историю для этого режима
+            const chatArea = document.getElementById('chatArea');
+            chatArea.innerHTML = '';
+            loadHistory();
         }
 
         const COMMANDS = [
@@ -384,6 +392,10 @@
             { cmd: 'pomodoro start', hint: 'Помодоро 25 мин' },
             { cmd: 'pomodoro break', hint: 'Перерыв 5 мин' },
             { cmd: 'pomodoro long break', hint: 'Длинный перерыв 15 мин' },
+            { cmd: 'ip', hint: 'Показать твой IP' },
+            { cmd: 'joke', hint: 'Случайная шутка' },
+            { cmd: 'quote', hint: 'Случайная цитата' },
+            { cmd: 'translate ', hint: 'Перевести текст на русский' },
         ];
 
         // Обновлять время каждую секунду
@@ -401,6 +413,17 @@
         // Инициализировать часы
         updateClock();
         setInterval(updateClock, 1000);
+
+        // Загрузить историю чата
+        async function loadHistory() {
+            try {
+                const type = currentMode;
+                const res = await fetch('/api/assistant/history?type=' + type);
+                const history = await res.json();
+                history.forEach(h => addMessage(h.role === 'user' ? 'user' : 'assistant', h.message));
+            } catch(e) {}
+        }
+        loadHistory();
 
         // Автодополнение и навигация
         document.getElementById('inputField').addEventListener('keydown', function(e) {
@@ -501,7 +524,7 @@
                     const data = await response.json();
                     addMessage('assistant', data.response);
                 } catch (error) {
-                    addMessage('assistant', '❌ Ошибка AI. Попробуйте еще раз.');
+                    addMessage('assistant', '❌ Ошибка AI: ' + error.message);
                 } finally {
                     isLoading = false;
                 }
@@ -642,6 +665,11 @@
                 const seconds = parseInt(match[1]);
                 startTimer(seconds);
             }
+        }
+
+        async function clearChat() {
+            if (!confirm('Очистить чат? Сообщения удалятся только визуально, в базе данных сохранятся.')) return;
+            document.getElementById('chatArea').innerHTML = '';
         }
 
         // Помодоро

@@ -2,6 +2,7 @@ package com.personalassistant;
 
 import org.springframework.stereotype.Service;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.client.RestTemplate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -16,6 +17,12 @@ public class AssistantService {
 
     @Autowired
     private NoteRepository noteRepository;
+
+    @Autowired
+    private HistoryRepository historyRepository;
+
+    @Autowired
+    private GroqService groqService;
 
     /**
      * Обработка команды и возврат ответа.
@@ -47,6 +54,14 @@ public class AssistantService {
             return convert(input.substring(8).trim());
         } else if (command.startsWith("pomodoro")) {
             return handlePomodoro(input.substring(8).trim());
+        } else if (command.equals("ip")) {
+            return getIP();
+        } else if (command.equals("joke")) {
+            return getJoke();
+        } else if (command.equals("quote")) {
+            return getQuote();
+        } else if (command.startsWith("translate ")) {
+            return translate(input.substring(10).trim());
         } else {
             return "Неизвестная команда. Введите 'help' для списка доступных команд.";
         }
@@ -70,7 +85,11 @@ public class AssistantService {
                 "• calc <выражение> - калькулятор (например: calc 2+2*3)\n" +
                 "• convert <число> <из> to <в> - конвертер (usd/eur/rub/km/mi/kg/lb/c/f)\n" +
                 "• pomodoro start - запустить помодоро (25 мин)\n" +
-                "• pomodoro break - короткий перерыв (5 мин)";
+                "• pomodoro break - короткий перерыв (5 мин)\n" +
+                "• ip - показать твой IP\n" +
+                "• joke - случайная шутка\n" +
+                "• quote - случайная цитата\n" +
+                "• translate <текст> - перевести текст на русский";
     }
 
     /**
@@ -312,6 +331,57 @@ public class AssistantService {
         boolean hasA = false, hasB = false;
         for (String s : group) { if (s.equals(a)) hasA = true; if (s.equals(b)) hasB = true; }
         return hasA && hasB;
+    }
+
+    private String getIP() {
+        try {
+            RestTemplate rt = new RestTemplate();
+            String ip = rt.getForObject("https://api.ipify.org", String.class);
+            historyRepository.save(new History("ip", ip));
+            return "🌐 Твой IP: " + ip;
+        } catch (Exception e) {
+            return "❌ Не удалось получить IP.";
+        }
+    }
+
+    private String getJoke() {
+        try {
+            RestTemplate rt = new RestTemplate();
+            rt.getForObject("https://official-joke-api.appspot.com/random_joke", java.util.Map.class);
+            java.util.Map joke = rt.getForObject("https://official-joke-api.appspot.com/random_joke", java.util.Map.class);
+            String result = "😂 " + joke.get("setup") + "\n\n" + joke.get("punchline");
+            historyRepository.save(new History("joke", result));
+            return result;
+        } catch (Exception e) {
+            String[] jokes = {
+                "😂 Почему программисты носят очки?\n\nПотому что не могут надеть C#!",
+                "😂 Почему Java разработчики носят очки?\n\nПотому что не могут видеть шарпов!",
+                "😂 Баг или фича?\n\nЭто не баг, это недокументированная фича!"
+            };
+            String joke = jokes[(int)(Math.random() * jokes.length)];
+            historyRepository.save(new History("joke", joke));
+            return joke;
+        }
+    }
+
+    private String getQuote() {
+        String[] quotes = {
+            "💬 \"Любой достаточно сложный проблем имеет простое решение.\" — Альберт Эйнштейн",
+            "💬 \"Не важно, насколько медленно ты движешься, главное — не останавливайся.\" — Конфуций",
+            "💬 \"Единственный способ делать хорошую работу — любить то, что делаешь.\" — Стив Джобс",
+            "💬 \"Код — это поэзия, которая должна читаться как проза.\" — Роберт Мартин",
+            "💬 \"Программирование — это искусство организации сложности.\" — Эдсгер Дейкстра"
+        };
+        String quote = quotes[(int)(Math.random() * quotes.length)];
+        historyRepository.save(new History("quote", quote));
+        return quote;
+    }
+
+    private String translate(String text) {
+        if (text.isEmpty()) return "❌ Введите текст. Пример: translate Hello world";
+        String result = groqService.chat("Переведи на русский язык, ответь только переводом без пояснений: " + text);
+        historyRepository.save(new History("translate", text + " → " + result));
+        return "🇷🇺 " + result;
     }
 
     /**
