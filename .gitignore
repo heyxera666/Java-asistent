@@ -2,3 +2,7 @@
 .maven/
 target/
 *.class
+apache-maven-3.9.5/
+apache-maven-3.9.5-bin.zip
+.maven.zip
+src/main/resources/application.properties
