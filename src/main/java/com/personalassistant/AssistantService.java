@@ -3,8 +3,6 @@ package com.personalassistant;
 import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.HashMap;
-import java.util.Map;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
@@ -97,7 +95,6 @@ public class AssistantService {
         }
         
         // Mock data - в реальном приложении можно подключить API OpenWeatherMap
-        String[] cities = {"москва", "санкт-петербург", "казань", "екатеринбург", "новосибирск"};
         String[] conditions = {"Ясно ☀️", "Облачно ☁️", "Дождь 🌧️", "Снег ❄️"};
         
         // Генерируем детерминированный результат на основе названия города
