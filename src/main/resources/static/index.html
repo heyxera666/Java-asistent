@@ -258,8 +258,31 @@
         .autocomplete-item:hover, .autocomplete-item.selected { background: #f0f0ff; }
         .autocomplete-item .hint { color: #999; font-size: 11px; }
 
-        .pomodoro-bar {
-            display: none;
+        .mode-toggle {
+            display: flex;
+            gap: 8px;
+            padding: 10px 15px;
+            background: #f0f0f0;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .mode-btn {
+            flex: 1;
+            padding: 8px;
+            border-radius: 20px;
+            border: none;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            background: #e0e0e0;
+            color: #666;
+            transition: all 0.2s;
+        }
+
+        .mode-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
             background: linear-gradient(135deg, #ff6b6b, #ee5a24);
             color: white;
             padding: 10px 20px;
@@ -312,6 +335,11 @@
             <button onclick="clearAllNotes()" style="width: 100%; margin-top: 10px; background: #ff6b6b;">Очистить все</button>
         </div>
 
+        <div class="mode-toggle">
+            <button class="mode-btn active" id="cmdBtn" onclick="setMode('cmd')">⌨️ Команды</button>
+            <button class="mode-btn" id="aiBtn" onclick="setMode('ai')">🤖 AI чат</button>
+        </div>
+
         <div class="pomodoro-bar" id="pomodoroBar">🍅 25:00</div>
 
         <div class="input-area" style="position:relative;">
@@ -329,6 +357,16 @@
         let timerInterval = null;
         let pomodoroInterval = null;
         let autocompleteIndex = -1;
+        let currentMode = 'cmd'; // 'cmd' or 'ai'
+
+        function setMode(mode) {
+            currentMode = mode;
+            document.getElementById('cmdBtn').classList.toggle('active', mode === 'cmd');
+            document.getElementById('aiBtn').classList.toggle('active', mode === 'ai');
+            const input = document.getElementById('inputField');
+            input.placeholder = mode === 'ai' ? 'Спросите что угодно у AI...' : 'Введите команду... (Tab для подсказок)';
+            hideAutocomplete();
+        }
 
         const COMMANDS = [
             { cmd: 'hello', hint: 'Приветствие' },
@@ -449,10 +487,26 @@
             if (!input || isLoading) return;
 
             isLoading = true;
-            
-            // Добавить сообщение пользователя
             addMessage('user', input);
             document.getElementById('inputField').value = '';
+            hideAutocomplete();
+
+            if (currentMode === 'ai') {
+                try {
+                    const response = await fetch('/api/assistant/ai', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ message: input })
+                    });
+                    const data = await response.json();
+                    addMessage('assistant', data.response);
+                } catch (error) {
+                    addMessage('assistant', '❌ Ошибка AI. Попробуйте еще раз.');
+                } finally {
+                    isLoading = false;
+                }
+                return;
+            }
 
             try {
                 const response = await fetch('/api/assistant/command', {

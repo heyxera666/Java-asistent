@@ -1,8 +1,10 @@
 package com.personalassistant;
 
 import org.springframework.stereotype.Service;
+import org.springframework.beans.factory.annotation.Autowired;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
@@ -12,7 +14,8 @@ import java.time.format.DateTimeFormatter;
 @Service
 public class AssistantService {
 
-    private final List<String> notes = new ArrayList<>();
+    @Autowired
+    private NoteRepository noteRepository;
 
     /**
      * Обработка команды и возврат ответа.
@@ -131,38 +134,41 @@ public class AssistantService {
         if (subCommand.startsWith("add ")) {
             String text = subCommand.substring(4).trim();
             if (!text.isEmpty()) {
-                notes.add(text);
+                noteRepository.save(new Note(text));
                 return "✅ Заметка добавлена: " + text;
             } else {
                 return "❌ Текст заметки пустой.";
             }
         } else if (subCommand.equals("list")) {
-            if (notes.isEmpty()) {
+            List<Note> all = noteRepository.findAll();
+            if (all.isEmpty()) {
                 return "📝 У вас нет заметок.";
             } else {
                 StringBuilder sb = new StringBuilder("📝 Ваши заметки:\n");
-                for (int i = 0; i < notes.size(); i++) {
-                    sb.append((i + 1)).append(". ").append(notes.get(i)).append("\n");
+                for (int i = 0; i < all.size(); i++) {
+                    sb.append((i + 1)).append(". ").append(all.get(i).getText()).append("\n");
                 }
                 return sb.toString().trim();
             }
         } else if (subCommand.startsWith("search ")) {
-            String query = subCommand.substring(7).trim().toLowerCase();
+            String query = subCommand.substring(7).trim();
             if (query.isEmpty()) return "❌ Введите текст для поиска.";
-            List<String> found = new ArrayList<>();
-            for (int i = 0; i < notes.size(); i++) {
-                if (notes.get(i).toLowerCase().contains(query)) {
-                    found.add((i + 1) + ". " + notes.get(i));
-                }
-            }
+            List<Note> found = noteRepository.findByTextContainingIgnoreCase(query);
             if (found.isEmpty()) return "🔍 Заметки не найдены по запросу: " + query;
-            return "🔍 Найдено:\n" + String.join("\n", found);
+            List<Note> all = noteRepository.findAll();
+            StringBuilder sb = new StringBuilder("🔍 Найдено:\n");
+            for (Note n : found) {
+                sb.append((all.indexOf(n) + 1)).append(". ").append(n.getText()).append("\n");
+            }
+            return sb.toString().trim();
         } else if (subCommand.startsWith("delete ")) {
             try {
                 int index = Integer.parseInt(subCommand.substring(7).trim()) - 1;
-                if (index >= 0 && index < notes.size()) {
-                    String deleted = notes.remove(index);
-                    return "🗑️ Заметка удалена: " + deleted;
+                List<Note> all = noteRepository.findAll();
+                if (index >= 0 && index < all.size()) {
+                    Note toDelete = all.get(index);
+                    noteRepository.delete(toDelete);
+                    return "🗑️ Заметка удалена: " + toDelete.getText();
                 } else {
                     return "❌ Заметка с номером " + (index + 1) + " не найдена.";
                 }
@@ -343,13 +349,12 @@ public class AssistantService {
      * Получить список всех заметок.
      */
     public List<String> getNotes() {
-        return new ArrayList<>(notes);
+        return noteRepository.findAll().stream()
+                .map(Note::getText)
+                .collect(Collectors.toList());
     }
 
-    /**
-     * Очистить все заметки.
-     */
     public void clearNotes() {
-        notes.clear();
+        noteRepository.deleteAll();
     }
 }

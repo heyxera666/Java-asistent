@@ -19,6 +19,18 @@ public class AssistantController {
     @Autowired
     private AssistantService assistantService;
 
+    @Autowired
+    private GroqService groqService;
+
+    @PostMapping("/ai")
+    public ResponseEntity<Map<String, String>> askAI(@RequestBody Map<String, String> request) {
+        String message = request.get("message");
+        String response = groqService.chat(message);
+        Map<String, String> result = new HashMap<>();
+        result.put("response", response);
+        return ResponseEntity.ok(result);
+    }
+
     /**
      * Обработать команду пользователя.
      */
