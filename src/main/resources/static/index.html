@@ -3,747 +3,381 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Personal Assistant</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 10px;
-        }
-
-        .container {
-            width: 100%;
-            max-width: 600px;
-            background: white;
-            border-radius: 15px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            display: flex;
-            flex-direction: column;
-            height: 90vh;
-            max-height: 800px;
-            overflow: hidden;
-        }
-
-        .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 20px;
-            text-align: center;
-            border-radius: 15px 15px 0 0;
-        }
-
-        .header h1 {
-            font-size: 28px;
-            margin-bottom: 5px;
-        }
-
-        .header p {
-            font-size: 14px;
-            opacity: 0.9;
-        }
-
-        .time-display {
-            background: rgba(255, 255, 255, 0.1);
-            padding: 10px 15px;
-            border-radius: 8px;
-            font-size: 13px;
-            font-weight: 500;
-            margin-top: 10px;
-            text-align: center;
-            font-family: 'Courier New', monospace;
-        }
-
-        .chat-area {
-            flex: 1;
-            overflow-y: auto;
-            padding: 20px;
-            background: #f9f9f9;
-        }
-
-        .message {
-            margin-bottom: 15px;
-            animation: slideIn 0.3s ease-out;
-        }
-
-        @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .message.user {
-            text-align: right;
-        }
-
-        .message-content {
-            display: inline-block;
-            max-width: 80%;
-            padding: 12px 15px;
-            border-radius: 15px;
-            word-wrap: break-word;
-            font-size: 14px;
-            line-height: 1.4;
-        }
-
-        .message.user .message-content {
-            background: #667eea;
-            color: white;
-            border-radius: 15px 5px 15px 15px;
-        }
-
-        .message.assistant .message-content {
-            background: #e0e0e0;
-            color: #333;
-            border-radius: 5px 15px 15px 15px;
-        }
-
-        .input-area {
-            padding: 15px;
-            background: white;
-            border-top: 1px solid #e0e0e0;
-            display: flex;
-            gap: 10px;
-        }
-
-        .input-group {
-            display: flex;
-            gap: 10px;
-            width: 100%;
-        }
-
-        input[type="text"] {
-            flex: 1;
-            padding: 12px 15px;
-            border: 2px solid #e0e0e0;
-            border-radius: 25px;
-            font-size: 14px;
-            transition: border-color 0.3s;
-            font-family: inherit;
-        }
-
-        input[type="text"]:focus {
-            outline: none;
-            border-color: #667eea;
-        }
-
-        button {
-            padding: 12px 25px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            border-radius: 25px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 600;
-            transition: transform 0.2s, box-shadow 0.2s;
-        }
-
-        button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
-        }
-
-        button:active {
-            transform: translateY(0);
-        }
-
-        .notes-toggle {
-            background: #764ba2;
-            padding: 10px 20px;
-            margin: 10px;
-            width: auto;
-            margin-left: auto;
-            margin-right: 10px;
-        }
-
-        .notes-panel {
-            display: none;
-            background: #f0f0f0;
-            border-top: 1px solid #e0e0e0;
-            padding: 15px;
-            max-height: 200px;
-            overflow-y: auto;
-        }
-
-        .notes-panel.active {
-            display: block;
-        }
-
-        .notes-list {
-            list-style: none;
-        }
-
-        .notes-list li {
-            padding: 10px;
-            background: white;
-            margin-bottom: 8px;
-            border-radius: 8px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .notes-list button {
-            padding: 5px 10px;
-            font-size: 12px;
-            background: #ff6b6b;
-        }
-
-        .loading {
-            display: inline-block;
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: #667eea;
-            animation: loading 1.4s infinite;
-            margin: 0 2px;
-        }
-
-        @keyframes loading {
-            0%, 100% {
-                opacity: 0.3;
-            }
-            50% {
-                opacity: 1;
-            }
-        }
-
-        .timer-display {
-            font-size: 24px;
-            font-weight: bold;
-            color: #667eea;
-            text-align: center;
-            margin: 10px 0;
-        }
-
-        .autocomplete-list {
-            position: absolute;
-            bottom: 60px;
-            left: 15px;
-            right: 15px;
-            background: white;
-            border: 1px solid #e0e0e0;
-            border-radius: 10px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-            z-index: 100;
-            overflow: hidden;
-            display: none;
-        }
-
-        .autocomplete-item {
-            padding: 10px 15px;
-            cursor: pointer;
-            font-size: 13px;
-            border-bottom: 1px solid #f0f0f0;
-            display: flex;
-            justify-content: space-between;
-        }
-
-        .autocomplete-item:last-child { border-bottom: none; }
-        .autocomplete-item:hover, .autocomplete-item.selected { background: #f0f0ff; }
-        .autocomplete-item .hint { color: #999; font-size: 11px; }
-
-        .mode-toggle {
-            display: flex;
-            gap: 8px;
-            padding: 10px 15px;
-            background: #f0f0f0;
-            border-top: 1px solid #e0e0e0;
-        }
-
-        .mode-btn {
-            flex: 1;
-            padding: 8px;
-            border-radius: 20px;
-            border: none;
-            cursor: pointer;
-            font-size: 13px;
-            font-weight: 600;
-            background: #e0e0e0;
-            color: #666;
-            transition: all 0.2s;
-        }
-
-        .mode-btn.active {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-        }
-
-        .pomodoro-bar {
-            display: none;
-            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
-            color: white;
-            padding: 10px 20px;
-            text-align: center;
-            font-weight: bold;
-            font-size: 18px;
-            letter-spacing: 2px;
-        }
-
-        .pomodoro-bar.break { background: linear-gradient(135deg, #26de81, #20bf6b); }
-        .pomodoro-bar.active { display: block; }
-
-        @media (max-width: 500px) {
-            .container {
-                max-height: 100vh;
-                border-radius: 0;
-            }
-
-            .header h1 {
-                font-size: 22px;
-            }
-
-            .message-content {
-                max-width: 95%;
-            }
-        }
-    </style>
+    <title>F.R.I.D.A.Y. — AI Assistant</title>
+    <link rel="stylesheet" href="/friday.css">
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>🤖 Personal Assistant</h1>
-            <p>Ваш персональный помощник Ерасыл</p>
-            <div class="time-display" id="timeDisplay">
-                📅 Загрузка...
-            </div>
+<div class="friday-app">
+    <!-- HEADER -->
+    <div class="hud-header">
+        <div class="arc-reactor"></div>
+        <div class="hud-title">
+            <h1>F.R.I.D.A.Y.</h1>
+            <div class="subtitle">Female Replacement Intelligent Digital Assistant Youth</div>
         </div>
-
-        <div class="chat-area" id="chatArea">
-            <div class="message assistant">
-                <div class="message-content">
-                    👋 Привет! Я Personal Assistant. Введите команду или напишите <strong>help</strong> для списка команд.
-                </div>
-            </div>
-        </div>
-
-        <div class="notes-panel" id="notesPanel">
-            <h3>📝 Заметки</h3>
-            <ul class="notes-list" id="notesList"></ul>
-            <button onclick="clearAllNotes()" style="width: 100%; margin-top: 10px; background: #ff6b6b;">Очистить все</button>
-        </div>
-
-        <div class="mode-toggle">
-            <button class="mode-btn active" id="cmdBtn" onclick="setMode('cmd')">⌨️ Команды</button>
-            <button class="mode-btn" id="aiBtn" onclick="setMode('ai')">🤖 AI чат</button>
-            <button class="mode-btn" style="flex:0.4; background:#ff6b6b; color:white;" onclick="clearChat()" title="Очистить чат">🗑️</button>
-        </div>
-
-        <div class="pomodoro-bar" id="pomodoroBar">🍅 25:00</div>
-
-        <div class="input-area" style="position:relative;">
-            <div class="autocomplete-list" id="autocompleteList"></div>
-            <div class="input-group">
-                <input type="text" id="inputField" placeholder="Введите команду... (Tab для подсказок)" autocomplete="off">
-                <button onclick="sendCommand()">Отправить</button>
-                <button class="notes-toggle" onclick="toggleNotesPanel()">📝</button>
-            </div>
+        <div class="hud-clock">
+            <div id="clockTime">--:--:--</div>
+            <div class="clock-date" id="clockDate">--.--.----</div>
         </div>
     </div>
 
-    <script>
-        let isLoading = false;
-        let timerInterval = null;
-        let pomodoroInterval = null;
-        let autocompleteIndex = -1;
-        let currentMode = 'cmd'; // 'cmd' or 'ai'
+    <!-- STATUS BAR -->
+    <div class="status-bar">
+        <div class="status-item"><span class="status-dot"></span> AI Core</div>
+        <div class="status-item"><span class="status-dot"></span> Voice Module</div>
+        <div class="status-item"><span class="status-dot"></span> Database</div>
+        <div class="status-item"><span class="status-dot" id="micStatus"></span> <span id="micLabel">Microphone</span></div>
+    </div>
 
-        function setMode(mode) {
-            currentMode = mode;
-            document.getElementById('cmdBtn').classList.toggle('active', mode === 'cmd');
-            document.getElementById('aiBtn').classList.toggle('active', mode === 'ai');
-            const input = document.getElementById('inputField');
-            input.placeholder = mode === 'ai' ? 'Спросите что угодно у AI...' : 'Введите команду... (Tab для подсказок)';
-            hideAutocomplete();
-            // Загрузить историю для этого режима
-            const chatArea = document.getElementById('chatArea');
-            chatArea.innerHTML = '';
-            loadHistory();
-        }
+    <!-- POMODORO -->
+    <div class="pomodoro-bar" id="pomodoroBar">🍅 25:00</div>
 
-        const COMMANDS = [
-            { cmd: 'hello', hint: 'Приветствие' },
-            { cmd: 'help', hint: 'Список команд' },
-            { cmd: 'time', hint: 'Текущее время' },
-            { cmd: 'date', hint: 'Текущая дата' },
-            { cmd: 'weather ', hint: 'Погода в городе' },
-            { cmd: 'note add ', hint: 'Добавить заметку' },
-            { cmd: 'note list', hint: 'Показать заметки' },
-            { cmd: 'note delete ', hint: 'Удалить заметку по номеру' },
-            { cmd: 'note search ', hint: 'Поиск по заметкам' },
-            { cmd: 'timer ', hint: 'Таймер в секундах' },
-            { cmd: 'calc ', hint: 'Калькулятор (пример: calc 2+2*3)' },
-            { cmd: 'convert ', hint: 'Конвертер (пример: convert 100 usd to eur)' },
-            { cmd: 'pomodoro start', hint: 'Помодоро 25 мин' },
-            { cmd: 'pomodoro break', hint: 'Перерыв 5 мин' },
-            { cmd: 'pomodoro long break', hint: 'Длинный перерыв 15 мин' },
-            { cmd: 'ip', hint: 'Показать твой IP' },
-            { cmd: 'joke', hint: 'Случайная шутка' },
-            { cmd: 'quote', hint: 'Случайная цитата' },
-            { cmd: 'translate ', hint: 'Перевести текст на русский' },
-        ];
+    <!-- CHAT -->
+    <div class="chat-area" id="chatArea">
+        <div class="msg friday">
+            <div class="msg-label">F.R.I.D.A.Y.</div>
+            <div class="msg-bubble">Здравствуйте, босс. Все системы активны и готовы к работе. Вы можете говорить голосом или печатать команды.</div>
+        </div>
+    </div>
 
-        // Обновлять время каждую секунду
-        function updateClock() {
-            const now = new Date();
-            const days = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"];
-            const dayOfWeek = days[now.getDay() === 0 ? 6 : now.getDay() - 1];
-            
-            const dateStr = `${String(now.getDate()).padStart(2, '0')}.${String(now.getMonth() + 1).padStart(2, '0')}.${now.getFullYear()}`;
-            const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
-            
-            document.getElementById('timeDisplay').textContent = `📅 ${dateStr} (${dayOfWeek}) ⏰ ${timeStr}`;
-        }
+    <!-- VOICE -->
+    <div class="voice-section">
+        <div class="voice-status" id="voiceStatus">ГОТОВА</div>
+        <button class="voice-btn" id="voiceBtn" onclick="toggleVoice()" title="Голосовое управление">🎙️</button>
+        <div class="audio-viz" id="audioViz"></div>
+    </div>
 
-        // Инициализировать часы
-        updateClock();
-        setInterval(updateClock, 1000);
+    <!-- MODE TABS -->
+    <div class="mode-tabs">
+        <button class="mode-tab active" id="tabCmd" onclick="setMode('cmd')">⌨ Команды</button>
+        <button class="mode-tab" id="tabAi" onclick="setMode('ai')">🧠 AI Чат</button>
+        <button class="mode-tab" onclick="clearChat()">🗑 Очистить</button>
+    </div>
 
-        // Загрузить историю чата
-        async function loadHistory() {
-            try {
-                const type = currentMode;
-                const res = await fetch('/api/assistant/history?type=' + type);
-                const history = await res.json();
-                history.forEach(h => addMessage(h.role === 'user' ? 'user' : 'assistant', h.message));
-            } catch(e) {}
-        }
-        loadHistory();
+    <!-- INPUT -->
+    <div class="input-section">
+        <input type="text" id="inputField" placeholder="Введите команду или скажите голосом..." autocomplete="off">
+        <button class="send-btn" onclick="sendCommand()" title="Отправить">▶</button>
+    </div>
+</div>
 
-        // Автодополнение и навигация
-        document.getElementById('inputField').addEventListener('keydown', function(e) {
-            const list = document.getElementById('autocompleteList');
-            const items = list.querySelectorAll('.autocomplete-item');
+<script>
+// === STATE ===
+let currentMode = 'cmd';
+let isLoading = false;
+let recognition = null;
+let isListening = false;
+let synth = window.speechSynthesis;
+let pomodoroInterval = null;
+let timerInterval = null;
+let selectedVoice = null;
 
-            if (e.key === 'Tab') {
-                e.preventDefault();
-                const val = this.value;
-                if (items.length === 0) {
-                    showAutocomplete(val);
-                } else if (items.length === 1) {
-                    this.value = items[0].dataset.cmd;
-                    hideAutocomplete();
-                } else if (autocompleteIndex >= 0) {
-                    this.value = items[autocompleteIndex].dataset.cmd;
-                    hideAutocomplete();
-                } else {
-                    autocompleteIndex = 0;
-                    updateSelection(items);
-                }
-            } else if (e.key === 'ArrowDown') {
-                e.preventDefault();
-                autocompleteIndex = Math.min(autocompleteIndex + 1, items.length - 1);
-                updateSelection(items);
-            } else if (e.key === 'ArrowUp') {
-                e.preventDefault();
-                autocompleteIndex = Math.max(autocompleteIndex - 1, 0);
-                updateSelection(items);
-            } else if (e.key === 'Escape') {
-                hideAutocomplete();
-            } else if (e.key === 'Enter' && !isLoading) {
-                if (autocompleteIndex >= 0 && items.length > 0) {
-                    this.value = items[autocompleteIndex].dataset.cmd;
-                    hideAutocomplete();
-                } else {
-                    sendCommand();
-                }
-            }
+// === CLOCK ===
+function updateClock() {
+    const now = new Date();
+    const days = ['Воскресенье','Понедельник','Вторник','Среда','Четверг','Пятница','Суббота'];
+    document.getElementById('clockTime').textContent =
+        now.toLocaleTimeString('ru-RU', {hour:'2-digit',minute:'2-digit',second:'2-digit'});
+    document.getElementById('clockDate').textContent =
+        days[now.getDay()] + ', ' + now.toLocaleDateString('ru-RU');
+}
+updateClock();
+setInterval(updateClock, 1000);
+
+// === AUDIO VISUALIZER ===
+(function initViz() {
+    const viz = document.getElementById('audioViz');
+    for (let i = 0; i < 20; i++) {
+        const bar = document.createElement('div');
+        bar.className = 'viz-bar';
+        bar.style.height = '4px';
+        viz.appendChild(bar);
+    }
+})();
+
+function animateViz(active) {
+    const bars = document.querySelectorAll('.viz-bar');
+    if (active) {
+        bars.forEach(b => {
+            (function loop() {
+                b.style.height = (4 + Math.random() * 30) + 'px';
+                b._timer = setTimeout(loop, 80 + Math.random() * 80);
+            })();
         });
+    } else {
+        bars.forEach(b => { clearTimeout(b._timer); b.style.height = '4px'; });
+    }
+}
 
-        document.getElementById('inputField').addEventListener('input', function() {
-            autocompleteIndex = -1;
-            showAutocomplete(this.value);
+// === VOICE RECOGNITION ===
+function initRecognition() {
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) { console.warn('Speech Recognition not supported'); return; }
+
+    recognition = new SR();
+    recognition.lang = 'ru-RU';
+    recognition.continuous = false;
+    recognition.interimResults = false;
+
+    recognition.onstart = () => {
+        isListening = true;
+        document.getElementById('voiceBtn').classList.add('listening');
+        document.getElementById('voiceStatus').textContent = 'СЛУШАЮ...';
+        document.getElementById('voiceStatus').className = 'voice-status active';
+        document.getElementById('micStatus').classList.remove('warn');
+        animateViz(true);
+    };
+
+    recognition.onresult = (e) => {
+        const text = e.results[0][0].transcript;
+        document.getElementById('inputField').value = text;
+        sendCommand();
+    };
+
+    recognition.onend = () => {
+        isListening = false;
+        document.getElementById('voiceBtn').classList.remove('listening');
+        document.getElementById('voiceStatus').textContent = 'ГОТОВА';
+        document.getElementById('voiceStatus').className = 'voice-status';
+        animateViz(false);
+    };
+
+    recognition.onerror = (e) => {
+        console.error('Speech error:', e.error);
+        isListening = false;
+        document.getElementById('voiceBtn').classList.remove('listening');
+        if (e.error === 'not-allowed') {
+            document.getElementById('voiceStatus').textContent = 'НЕТ ДОСТУПА К МИКРОФОНУ';
+            document.getElementById('micStatus').classList.add('warn');
+        } else {
+            document.getElementById('voiceStatus').textContent = 'ОШИБКА';
+        }
+        document.getElementById('voiceStatus').className = 'voice-status';
+        animateViz(false);
+    };
+}
+
+function toggleVoice() {
+    if (!recognition) initRecognition();
+    if (!recognition) {
+        addMessage('friday', 'Босс, ваш браузер не поддерживает голосовое управление. Используйте Chrome.');
+        return;
+    }
+    if (isListening) {
+        recognition.stop();
+    } else {
+        synth.cancel();
+        recognition.start();
+    }
+}
+
+// === TEXT-TO-SPEECH ===
+function loadVoices() {
+    const voices = synth.getVoices();
+    // Prefer Russian female voice
+    selectedVoice = voices.find(v => v.lang.startsWith('ru') && v.name.toLowerCase().includes('female')) ||
+                    voices.find(v => v.lang.startsWith('ru') && v.name.toLowerCase().includes('milena')) ||
+                    voices.find(v => v.lang.startsWith('ru') && v.name.toLowerCase().includes('irina')) ||
+                    voices.find(v => v.lang.startsWith('ru')) ||
+                    voices.find(v => v.lang.startsWith('en') && v.name.toLowerCase().includes('female')) ||
+                    voices[0];
+}
+
+if (synth.onvoiceschanged !== undefined) synth.onvoiceschanged = loadVoices;
+loadVoices();
+
+function speak(text) {
+    synth.cancel();
+    // Clean text for speech
+    const clean = text.replace(/[•📋🎙️📝🔧🎭💡✅❌🍅☕🛋️⏰🌐🌡️🔄🧮💬😂🇷🇺]/g, '')
+                      .replace(/\\n/g, '. ')
+                      .replace(/<[^>]*>/g, '')
+                      .replace(/\n/g, '. ')
+                      .trim();
+    if (!clean) return;
+
+    const utter = new SpeechSynthesisUtterance(clean);
+    utter.lang = 'ru-RU';
+    utter.rate = 1.05;
+    utter.pitch = 1.1;
+    if (selectedVoice) utter.voice = selectedVoice;
+
+    utter.onstart = () => {
+        document.getElementById('voiceBtn').classList.add('speaking');
+        document.getElementById('voiceStatus').textContent = 'ГОВОРЮ...';
+        document.getElementById('voiceStatus').className = 'voice-status speaking';
+        animateViz(true);
+    };
+    utter.onend = () => {
+        document.getElementById('voiceBtn').classList.remove('speaking');
+        document.getElementById('voiceStatus').textContent = 'ГОТОВА';
+        document.getElementById('voiceStatus').className = 'voice-status';
+        animateViz(false);
+    };
+
+    synth.speak(utter);
+}
+
+// === MODE ===
+function setMode(mode) {
+    currentMode = mode;
+    document.getElementById('tabCmd').classList.toggle('active', mode === 'cmd');
+    document.getElementById('tabAi').classList.toggle('active', mode === 'ai');
+    document.getElementById('inputField').placeholder =
+        mode === 'ai' ? 'Спросите AI что угодно...' : 'Введите команду или скажите голосом...';
+    document.getElementById('chatArea').innerHTML = '';
+    loadHistory();
+}
+
+// === SEND COMMAND ===
+async function sendCommand() {
+    const input = document.getElementById('inputField').value.trim();
+    if (!input || isLoading) return;
+
+    isLoading = true;
+    addMessage('user', input);
+    document.getElementById('inputField').value = '';
+
+    const url = currentMode === 'ai' ? '/api/assistant/ai' : '/api/assistant/command';
+    const body = currentMode === 'ai' ? { message: input } : { command: input };
+
+    try {
+        const res = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
         });
+        const data = await res.json();
+        const response = data.response;
 
-        document.addEventListener('click', function(e) {
-            if (!e.target.closest('.input-area')) hideAutocomplete();
-        });
+        addMessage('friday', response);
+        speak(response);
 
-        function showAutocomplete(val) {
-            const list = document.getElementById('autocompleteList');
-            if (!val) { hideAutocomplete(); return; }
-            const matches = COMMANDS.filter(c => c.cmd.startsWith(val.toLowerCase()));
-            if (matches.length === 0) { hideAutocomplete(); return; }
-            list.innerHTML = matches.map(c =>
-                `<div class="autocomplete-item" data-cmd="${c.cmd}" onclick="selectAutocomplete('${c.cmd}')">
-                    <span>${c.cmd}</span><span class="hint">${c.hint}</span>
-                </div>`
-            ).join('');
-            list.style.display = 'block';
+        // Handle timer
+        if (input.toLowerCase().match(/^(timer|таймер)\s+\d+/)) {
+            const secs = parseInt(input.replace(/\D/g, ''));
+            if (secs > 0) startTimer(secs);
         }
 
-        function hideAutocomplete() {
-            document.getElementById('autocompleteList').style.display = 'none';
-            autocompleteIndex = -1;
+        // Handle pomodoro
+        if (response.startsWith('🍅 POMODORO:')) startPomodoro(25 * 60, false);
+        else if (response.startsWith('☕ BREAK:')) startPomodoro(5 * 60, true);
+        else if (response.startsWith('🛋️ LONGBREAK:')) startPomodoro(15 * 60, true);
+
+    } catch (err) {
+        addMessage('friday', 'Босс, ошибка связи: ' + err.message);
+    } finally {
+        isLoading = false;
+    }
+}
+
+// === MESSAGES ===
+function addMessage(sender, text) {
+    const area = document.getElementById('chatArea');
+    const div = document.createElement('div');
+    div.className = 'msg ' + (sender === 'user' ? 'user' : 'friday');
+
+    const label = document.createElement('div');
+    label.className = 'msg-label';
+    label.textContent = sender === 'user' ? 'БОСС' : 'F.R.I.D.A.Y.';
+
+    const bubble = document.createElement('div');
+    bubble.className = 'msg-bubble';
+    bubble.innerHTML = text.replace(/\\n/g, '<br>').replace(/\n/g, '<br>');
+
+    div.appendChild(label);
+    div.appendChild(bubble);
+    area.appendChild(div);
+    area.scrollTop = area.scrollHeight;
+}
+
+// === HISTORY ===
+async function loadHistory() {
+    try {
+        const res = await fetch('/api/assistant/history?type=' + currentMode);
+        const history = await res.json();
+        history.forEach(h => addMessage(h.role === 'user' ? 'user' : 'friday', h.message));
+    } catch(e) {}
+}
+loadHistory();
+
+// === CLEAR ===
+function clearChat() {
+    document.getElementById('chatArea').innerHTML = '';
+    addMessage('friday', 'Чат очищен, босс. Чем могу помочь?');
+}
+
+// === TIMER ===
+function startTimer(seconds) {
+    let remaining = seconds;
+    const area = document.getElementById('chatArea');
+    const div = document.createElement('div');
+    div.className = 'msg friday';
+    div.innerHTML = '<div class="msg-label">F.R.I.D.A.Y.</div><div class="msg-bubble"><div class="timer-display" id="timerCount">' + remaining + 's</div></div>';
+    area.appendChild(div);
+    area.scrollTop = area.scrollHeight;
+
+    if (timerInterval) clearInterval(timerInterval);
+    timerInterval = setInterval(() => {
+        remaining--;
+        const el = document.getElementById('timerCount');
+        if (el) el.textContent = remaining + 's';
+        if (remaining <= 0) {
+            clearInterval(timerInterval);
+            if (el) { el.textContent = 'Время вышло!'; el.style.color = '#ff4444'; }
+            playBeep();
+            speak('Босс, таймер завершён.');
         }
+    }, 1000);
+}
 
-        function updateSelection(items) {
-            items.forEach((el, i) => el.classList.toggle('selected', i === autocompleteIndex));
-            if (autocompleteIndex >= 0) items[autocompleteIndex].scrollIntoView({ block: 'nearest' });
+// === POMODORO ===
+function startPomodoro(total, isBreak) {
+    if (pomodoroInterval) clearInterval(pomodoroInterval);
+    const bar = document.getElementById('pomodoroBar');
+    bar.className = 'pomodoro-bar active' + (isBreak ? ' break' : '');
+    let remaining = total;
+    function update() {
+        const m = String(Math.floor(remaining / 60)).padStart(2, '0');
+        const s = String(remaining % 60).padStart(2, '0');
+        bar.textContent = (isBreak ? '☕ ' : '🍅 ') + m + ':' + s;
+        if (remaining <= 0) {
+            clearInterval(pomodoroInterval);
+            bar.textContent = isBreak ? '☕ Перерыв окончен!' : '🍅 Помодоро завершено!';
+            playBeep();
+            speak(isBreak ? 'Босс, перерыв окончен.' : 'Босс, помодоро завершено. Отличная работа.');
+            setTimeout(() => { bar.className = 'pomodoro-bar'; }, 5000);
         }
+        remaining--;
+    }
+    update();
+    pomodoroInterval = setInterval(update, 1000);
+}
 
-        function selectAutocomplete(cmd) {
-            document.getElementById('inputField').value = cmd;
-            hideAutocomplete();
-            document.getElementById('inputField').focus();
-        }
+// === BEEP ===
+function playBeep() {
+    try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.frequency.value = 600;
+        osc.type = 'sine';
+        gain.gain.setValueAtTime(0.3, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.8);
+        osc.start(ctx.currentTime);
+        osc.stop(ctx.currentTime + 0.8);
+    } catch(e) {}
+}
 
-        // Отправить команду
-        async function sendCommand() {
-            const input = document.getElementById('inputField').value.trim();
-            
-            if (!input || isLoading) return;
+// === KEYBOARD ===
+document.getElementById('inputField').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' && !isLoading) sendCommand();
+});
 
-            isLoading = true;
-            addMessage('user', input);
-            document.getElementById('inputField').value = '';
-            hideAutocomplete();
-
-            if (currentMode === 'ai') {
-                try {
-                    const response = await fetch('/api/assistant/ai', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ message: input })
-                    });
-                    const data = await response.json();
-                    addMessage('assistant', data.response);
-                } catch (error) {
-                    addMessage('assistant', '❌ Ошибка AI: ' + error.message);
-                } finally {
-                    isLoading = false;
-                }
-                return;
-            }
-
-            try {
-                const response = await fetch('/api/assistant/command', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ command: input })
-                });
-
-                const data = await response.json();
-                addMessage('assistant', data.response);
-
-                // Обновить список заметок
-                if (input.toLowerCase().startsWith('note')) {
-                    setTimeout(updateNotesList, 500);
-                }
-
-                // Обработать таймер
-                if (input.toLowerCase().startsWith('timer')) {
-                    handleTimer(input);
-                }
-
-                // Обработать помодоро
-                if (data.response.startsWith('🍅 POMODORO:')) {
-                    startPomodoro(25 * 60, false);
-                } else if (data.response.startsWith('☕ BREAK:')) {
-                    startPomodoro(5 * 60, true);
-                } else if (data.response.startsWith('🛋️ LONGBREAK:')) {
-                    startPomodoro(15 * 60, true);
-                }
-
-            } catch (error) {
-                console.error('Ошибка:', error);
-                addMessage('assistant', '❌ Ошибка при обработке команды. Попробуйте еще раз.');
-            } finally {
-                isLoading = false;
-            }
-        }
-
-        // Добавить сообщение в чат
-        function addMessage(sender, text) {
-            const chatArea = document.getElementById('chatArea');
-            const messageDiv = document.createElement('div');
-            messageDiv.className = 'message ' + sender;
-            
-            const contentDiv = document.createElement('div');
-            contentDiv.className = 'message-content';
-            contentDiv.innerHTML = text.replace(/\n/g, '<br>');
-            
-            messageDiv.appendChild(contentDiv);
-            chatArea.appendChild(messageDiv);
-            
-            // Прокрутить вниз
-            chatArea.scrollTop = chatArea.scrollHeight;
-        }
-
-        // Показать/скрыть панель заметок
-        function toggleNotesPanel() {
-            const panel = document.getElementById('notesPanel');
-            panel.classList.toggle('active');
-            if (panel.classList.contains('active')) {
-                updateNotesList();
-            }
-        }
-
-        // Обновить список заметок
-        async function updateNotesList() {
-            try {
-                const response = await fetch('/api/assistant/notes');
-                const data = await response.json();
-                const notesList = document.getElementById('notesList');
-                
-                notesList.innerHTML = '';
-                
-                if (data.notes.length === 0) {
-                    notesList.innerHTML = '<li style="text-align: center; color: #999;">Нет заметок</li>';
-                } else {
-                    data.notes.forEach((note, index) => {
-                        const li = document.createElement('li');
-                        li.innerHTML = `
-                            <span>${note}</span>
-                            <button onclick="deleteNote(${index + 1})">❌</button>
-                        `;
-                        notesList.appendChild(li);
-                    });
-                }
-            } catch (error) {
-                console.error('Ошибка при загрузке заметок:', error);
-            }
-        }
-
-        // Удалить заметку
-        function deleteNote(index) {
-            sendCommand_Direct('note delete ' + index);
-        }
-
-        // Отправить команду напрямую
-        async function sendCommand_Direct(command) {
-            try {
-                const response = await fetch('/api/assistant/command', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ command: command })
-                });
-
-                const data = await response.json();
-                setTimeout(updateNotesList, 300);
-            } catch (error) {
-                console.error('Ошибка:', error);
-            }
-        }
-
-        // Очистить все заметки
-        async function clearAllNotes() {
-            if (confirm('Вы уверены? Все заметки будут удалены!')) {
-                try {
-                    await fetch('/api/assistant/notes', { method: 'DELETE' });
-                    updateNotesList();
-                    addMessage('assistant', '🗑️ Все заметки удалены.');
-                } catch (error) {
-                    console.error('Ошибка:', error);
-                }
-            }
-        }
-
-        // Обработать таймер
-        function handleTimer(input) {
-            const match = input.match(/timer\s+(\d+)/i);
-            if (match) {
-                const seconds = parseInt(match[1]);
-                startTimer(seconds);
-            }
-        }
-
-        async function clearChat() {
-            if (!confirm('Очистить чат? Сообщения удалятся только визуально, в базе данных сохранятся.')) return;
-            document.getElementById('chatArea').innerHTML = '';
-        }
-
-        // Помодоро
-        function startPomodoro(totalSeconds, isBreak) {
-            if (pomodoroInterval) clearInterval(pomodoroInterval);
-            const bar = document.getElementById('pomodoroBar');
-            bar.className = 'pomodoro-bar active' + (isBreak ? ' break' : '');
-            let remaining = totalSeconds;
-
-            function update() {
-                const m = String(Math.floor(remaining / 60)).padStart(2, '0');
-                const s = String(remaining % 60).padStart(2, '0');
-                bar.textContent = (isBreak ? '☕ ' : '🍅 ') + m + ':' + s;
-                if (remaining <= 0) {
-                    clearInterval(pomodoroInterval);
-                    bar.textContent = isBreak ? '☕ Перерыв окончен!' : '🍅 Помодоро завершено!';
-                    playBeep();
-                    setTimeout(() => { bar.className = 'pomodoro-bar'; }, 5000);
-                }
-                remaining--;
-            }
-            update();
-            pomodoroInterval = setInterval(update, 1000);
-        }
-
-        // Запустить таймер
-        function startTimer(seconds) {
-            let remaining = seconds;
-            
-            // Добавить элемент таймера
-            const chatArea = document.getElementById('chatArea');
-            const timerDiv = document.createElement('div');
-            timerDiv.id = 'timerDisplay';
-            timerDiv.className = 'message assistant';
-            timerDiv.innerHTML = '<div class="message-content"><div class="timer-display" id="timerCount">' + remaining + 's</div></div>';
-            chatArea.appendChild(timerDiv);
-            chatArea.scrollTop = chatArea.scrollHeight;
-
-            // Обновлять каждую секунду
-            if (timerInterval) clearInterval(timerInterval);
-            
-            timerInterval = setInterval(() => {
-                remaining--;
-                document.getElementById('timerCount').textContent = remaining + 's';
-                
-                if (remaining <= 0) {
-                    clearInterval(timerInterval);
-                    document.getElementById('timerCount').textContent = '⏰ Время вышло!';
-                    document.getElementById('timerCount').style.color = '#ff6b6b';
-                    
-                    // Звуковой сигнал
-                    playBeep();
-                }
-            }, 1000);
-        }
-
-        // Воспроизвести звук
-        function playBeep() {
-            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            const oscillator = audioContext.createOscillator();
-            const gainNode = audioContext.createGain();
-            
-            oscillator.connect(gainNode);
-            gainNode.connect(audioContext.destination);
-            
-            oscillator.frequency.value = 800;
-            oscillator.type = 'sine';
-            
-            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
-            
-            oscillator.start(audioContext.currentTime);
-            oscillator.stop(audioContext.currentTime + 0.5);
-        }
-    </script>
+// === INIT RECOGNITION ===
+initRecognition();
+</script>
 </body>
 </html>

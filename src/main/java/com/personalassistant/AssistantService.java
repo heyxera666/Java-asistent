@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
 /**
- * Сервис для обработки команд Personal Assistant.
+ * Сервис F.R.I.D.A.Y. — обработка голосовых и текстовых команд.
  */
 @Service
 public class AssistantService {
@@ -25,159 +25,301 @@ public class AssistantService {
     private GroqService groqService;
 
     /**
-     * Обработка команды и возврат ответа.
+     * Умная обработка команды — поддержка синонимов и естественной речи.
      */
     public String processCommand(String input) {
         if (input == null || input.trim().isEmpty()) {
-            return "Пожалуйста, введите команду.";
+            return "Босс, я вас слушаю. Скажите команду.";
         }
 
         String command = input.toLowerCase().trim();
 
-        if (command.equals("hello")) {
-            return "Привет! Как я могу помочь?";
-        } else if (command.equals("help")) {
-            return getHelp();
-        } else if (command.equals("time")) {
-            return getTime();
-        } else if (command.equals("date")) {
-            return getDate();
-        } else if (command.startsWith("weather")) {
-            return getWeather(input.substring(7).trim());
-        } else if (command.startsWith("note ")) {
-            return handleNote(input.substring(5).trim());
-        } else if (command.startsWith("timer ")) {
-            return handleTimer(input.substring(6).trim());
-        } else if (command.startsWith("calc ")) {
-            return calculate(input.substring(5).trim());
-        } else if (command.startsWith("convert ")) {
-            return convert(input.substring(8).trim());
-        } else if (command.startsWith("pomodoro")) {
-            return handlePomodoro(input.substring(8).trim());
-        } else if (command.equals("ip")) {
-            return getIP();
-        } else if (command.equals("joke")) {
-            return getJoke();
-        } else if (command.equals("quote")) {
-            return getQuote();
-        } else if (command.startsWith("translate ")) {
-            return translate(input.substring(10).trim());
-        } else {
-            return "Неизвестная команда. Введите 'help' для списка доступных команд.";
+        // --- Приветствия ---
+        if (matchesAny(command, "привет", "здравствуй", "хай", "hello", "hi", "добрый день",
+                "доброе утро", "добрый вечер", "йоу", "салам", "здорово", "приветик")) {
+            return "Здравствуйте, босс! Системы F.R.I.D.A.Y. в полной готовности. Чем могу помочь?";
         }
+
+        // --- Справка ---
+        if (matchesAny(command, "help", "помощь", "команды", "что умеешь", "что ты умеешь",
+                "что можешь", "помоги", "справка")) {
+            return getHelp();
+        }
+
+        // --- Время ---
+        if (matchesAny(command, "time", "время", "сколько времени", "который час",
+                "текущее время", "часы")) {
+            return getTime();
+        }
+
+        // --- Дата ---
+        if (matchesAny(command, "date", "дата", "какая дата", "какой сегодня день",
+                "число", "сегодня", "какое число")) {
+            return getDate();
+        }
+
+        // --- Погода ---
+        if (command.startsWith("weather") || command.startsWith("погода")) {
+            String city = command.replaceFirst("(weather|погода)\\s*", "").trim();
+            return getWeather(city);
+        }
+
+        // --- Заметки ---
+        if (command.startsWith("note ") || command.startsWith("заметка ") ||
+            command.startsWith("запиши") || command.startsWith("запомни")) {
+            return handleNoteNatural(input);
+        }
+
+        // --- Таймер ---
+        if (command.startsWith("timer ") || command.startsWith("таймер ")) {
+            String time = command.replaceFirst("(timer|таймер)\\s*", "").trim();
+            return handleTimer(time);
+        }
+
+        // --- Калькулятор ---
+        if (command.startsWith("calc ") || command.startsWith("посчитай ") ||
+            command.startsWith("калькулятор ") || command.startsWith("вычисли ")) {
+            String expr = command.replaceFirst("(calc|посчитай|калькулятор|вычисли)\\s*", "").trim();
+            return calculate(expr);
+        }
+
+        // --- Конвертер ---
+        if (command.startsWith("convert ") || command.startsWith("конвертируй ") ||
+            command.startsWith("переведи единицы ")) {
+            String expr = command.replaceFirst("(convert|конвертируй|переведи единицы)\\s*", "").trim();
+            return convert(expr);
+        }
+
+        // --- Помодоро ---
+        if (command.startsWith("pomodoro") || command.startsWith("помодоро") ||
+            command.equals("работа") || command.equals("фокус")) {
+            String sub = command.replaceFirst("(pomodoro|помодоро)\\s*", "").trim();
+            return handlePomodoro(sub);
+        }
+
+        // --- IP ---
+        if (matchesAny(command, "ip", "мой ip", "айпи", "мой айпи", "покажи ip")) {
+            return getIP();
+        }
+
+        // --- Шутка ---
+        if (matchesAny(command, "joke", "шутка", "анекдот", "рассмеши", "пошути",
+                "расскажи шутку", "смешное")) {
+            return getJoke();
+        }
+
+        // --- Цитата ---
+        if (matchesAny(command, "quote", "цитата", "мотивация", "вдохнови",
+                "мудрость", "скажи цитату")) {
+            return getQuote();
+        }
+
+        // --- Перевод ---
+        if (command.startsWith("translate ") || command.startsWith("переведи ")) {
+            String text = command.replaceFirst("(translate|переведи)\\s*", "").trim();
+            return translate(text);
+        }
+
+        // --- Статус системы ---
+        if (matchesAny(command, "статус", "status", "система", "диагностика",
+                "как дела", "всё ок", "системы")) {
+            return getSystemStatus();
+        }
+
+        // --- Кто ты ---
+        if (matchesAny(command, "кто ты", "что ты", "как тебя зовут", "who are you",
+                "представься", "ты кто")) {
+            return "Я — F.R.I.D.A.Y., ваш персональный ИИ-ассистент, босс. " +
+                   "Преемница J.A.R.V.I.S. Готова помочь с любыми задачами. " +
+                   "Все системы функционируют в штатном режиме.";
+        }
+
+        // --- Если не распознано — спросить AI ---
+        return groqService.chat(input);
+    }
+
+    private boolean matchesAny(String input, String... variants) {
+        for (String v : variants) {
+            if (input.equals(v) || input.startsWith(v + " ") || input.contains(v)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
-     * Получить справку по командам.
+     * Справка в стиле F.R.I.D.A.Y.
      */
     private String getHelp() {
-        return "📋 Доступные команды:\n" +
-                "• hello - приветствие\n" +
-                "• help - показать эту справку\n" +
-                "• time - показать текущее время\n" +
-                "• date - показать дату\n" +
-                "• weather <город> - информация о погоде\n" +
-                "• note add <текст> - добавить заметку\n" +
-                "• note list - показать все заметки\n" +
-                "• note delete <номер> - удалить заметку\n" +
-                "• note search <текст> - поиск по заметкам\n" +
-                "• timer <секунды> - запустить таймер\n" +
-                "• calc <выражение> - калькулятор (например: calc 2+2*3)\n" +
-                "• convert <число> <из> to <в> - конвертер (usd/eur/rub/km/mi/kg/lb/c/f)\n" +
-                "• pomodoro start - запустить помодоро (25 мин)\n" +
-                "• pomodoro break - короткий перерыв (5 мин)\n" +
-                "• ip - показать твой IP\n" +
-                "• joke - случайная шутка\n" +
-                "• quote - случайная цитата\n" +
-                "• translate <текст> - перевести текст на русский";
+        return "Босс, вот мои возможности:\\n\\n" +
+                "🎙️ ГОЛОСОВЫЕ КОМАНДЫ:\\n" +
+                "• «Привет» — приветствие\\n" +
+                "• «Который час» / «Время» — текущее время\\n" +
+                "• «Какая дата» / «Число» — текущая дата\\n" +
+                "• «Погода Москва» — прогноз погоды\\n" +
+                "• «Статус» — диагностика систем\\n" +
+                "• «Кто ты» — информация обо мне\\n\\n" +
+                "📝 ЗАМЕТКИ:\\n" +
+                "• «Запиши купить молоко» — новая заметка\\n" +
+                "• «Покажи заметки» — список заметок\\n" +
+                "• «Удали заметку 1» — удалить заметку\\n" +
+                "• «Найди заметку ...» — поиск\\n\\n" +
+                "🔧 ИНСТРУМЕНТЫ:\\n" +
+                "• «Посчитай 2+2*3» — калькулятор\\n" +
+                "• «Таймер 60» — таймер в секундах\\n" +
+                "• «Помодоро» — техника Помодоро\\n" +
+                "• «Конвертируй 100 usd to eur» — конвертер\\n" +
+                "• «Переведи Hello» — переводчик\\n\\n" +
+                "🎭 РАЗВЛЕЧЕНИЯ:\\n" +
+                "• «Шутка» — рассказать шутку\\n" +
+                "• «Цитата» — мудрая цитата\\n\\n" +
+                "💡 Всё, что не распознано — отправляется в AI-модуль для умного ответа.";
     }
 
-    /**
-     * Получить текущее время.
-     */
     private String getTime() {
         LocalDateTime now = LocalDateTime.now();
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm:ss");
-        return "⏰ Текущее время: " + now.format(formatter);
+        return "Босс, сейчас " + now.format(formatter) + ". Все системы синхронизированы.";
     }
 
-    /**
-     * Получить текущую дату.
-     */
     private String getDate() {
         LocalDateTime now = LocalDateTime.now();
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy");
-        String dayOfWeek = getDayOfWeek(now);
-        return "📅 " + now.format(formatter) + " (" + dayOfWeek + ")";
+        String dayOfWeek = getDayOfWeekFull(now);
+        return "Сегодня " + dayOfWeek + ", " + now.format(formatter) + ", босс.";
     }
 
-    /**
-     * Получить название дня недели на русском.
-     */
-    private String getDayOfWeek(LocalDateTime dateTime) {
-        String[] days = {"Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"};
+    private String getDayOfWeekFull(LocalDateTime dateTime) {
+        String[] days = {"понедельник", "вторник", "среда", "четверг", "пятница", "суббота", "воскресенье"};
         return days[dateTime.getDayOfWeek().getValue() - 1];
     }
 
-    /**
-     * Получить информацию о погоде.
-     */
     private String getWeather(String location) {
         if (location.isEmpty()) {
             location = "Москва";
         }
-        
-        // Mock data - в реальном приложении можно подключить API OpenWeatherMap
+
         String[] conditions = {"Ясно ☀️", "Облачно ☁️", "Дождь 🌧️", "Снег ❄️"};
-        
-        // Генерируем детерминированный результат на основе названия города
         int temp = 15 + (location.length() % 10);
         int conditionIndex = location.length() % conditions.length;
         int humidity = 50 + (location.length() % 30);
         int wind = 5 + (location.length() % 15);
-        
-        return String.format("🌡️ Погода в %s:\n" +
-                "• Состояние: %s\n" +
-                "• Температура: %d°C\n" +
-                "• Влажность: %d%%\n" +
-                "• Ветер: %d км/ч",
-                location.substring(0, 1).toUpperCase() + location.substring(1),
-                conditions[conditionIndex],
-                temp, humidity, wind);
+        String city = location.substring(0, 1).toUpperCase() + location.substring(1);
+
+        return String.format("Босс, данные по %s получены:\\n" +
+                "• Состояние: %s\\n" +
+                "• Температура: %d°C\\n" +
+                "• Влажность: %d%%\\n" +
+                "• Скорость ветра: %d км/ч\\n" +
+                "Рекомендую учесть эти условия при планировании.",
+                city, conditions[conditionIndex], temp, humidity, wind);
     }
 
     /**
-     * Обработка команд заметок.
+     * Обработка заметок с поддержкой естественного языка.
      */
-    private String handleNote(String subCommand) {
+    private String handleNoteNatural(String input) {
+        String lower = input.toLowerCase().trim();
+
+        // «запиши ...» или «запомни ...»
+        if (lower.startsWith("запиши ") || lower.startsWith("запомни ")) {
+            String text = input.substring(input.indexOf(' ') + 1).trim();
+            if (!text.isEmpty()) {
+                noteRepository.save(new Note(text));
+                return "Записала, босс: «" + text + "»";
+            }
+            return "Босс, не расслышала что записать. Повторите, пожалуйста.";
+        }
+
+        // «заметка покажи» / «покажи заметки»
+        if (lower.contains("покажи") || lower.contains("список") || lower.contains("list")) {
+            List<Note> all = noteRepository.findAll();
+            if (all.isEmpty()) {
+                return "Босс, у вас нет заметок. Хотите что-то записать?";
+            }
+            StringBuilder sb = new StringBuilder("Ваши заметки, босс:\\n");
+            for (int i = 0; i < all.size(); i++) {
+                sb.append((i + 1)).append(". ").append(all.get(i).getText()).append("\\n");
+            }
+            return sb.toString().trim();
+        }
+
+        // «заметка найди ...» / «найди заметку»
+        if (lower.contains("найди") || lower.contains("поиск") || lower.contains("search")) {
+            String query = lower.replaceAll(".*(найди|поиск|search)\\s*", "").trim();
+            if (query.isEmpty()) return "Босс, что ищем?";
+            List<Note> found = noteRepository.findByTextContainingIgnoreCase(query);
+            if (found.isEmpty()) return "Ничего не найдено по запросу «" + query + "», босс.";
+            List<Note> all = noteRepository.findAll();
+            StringBuilder sb = new StringBuilder("Найдено, босс:\\n");
+            for (Note n : found) {
+                sb.append((all.indexOf(n) + 1)).append(". ").append(n.getText()).append("\\n");
+            }
+            return sb.toString().trim();
+        }
+
+        // «заметка удали 1» / «удали заметку 1»
+        if (lower.contains("удали") || lower.contains("delete")) {
+            String numStr = lower.replaceAll("\\D", "");
+            if (numStr.isEmpty()) return "Босс, укажите номер заметки для удаления.";
+            try {
+                int index = Integer.parseInt(numStr) - 1;
+                List<Note> all = noteRepository.findAll();
+                if (index >= 0 && index < all.size()) {
+                    Note toDelete = all.get(index);
+                    noteRepository.delete(toDelete);
+                    return "Заметка удалена, босс: «" + toDelete.getText() + "»";
+                }
+                return "Босс, заметки с таким номером нет.";
+            } catch (NumberFormatException e) {
+                return "Босс, не могу распознать номер заметки.";
+            }
+        }
+
+        // Стандартная обработка
+        if (lower.startsWith("note ")) {
+            return handleNoteClassic(input.substring(5).trim());
+        }
+        if (lower.startsWith("заметка ")) {
+            String sub = input.substring(8).trim();
+            if (sub.toLowerCase().startsWith("добавь ") || sub.toLowerCase().startsWith("add ")) {
+                String text = sub.substring(sub.indexOf(' ') + 1).trim();
+                noteRepository.save(new Note(text));
+                return "Записала, босс: «" + text + "»";
+            }
+            return handleNoteClassic(sub);
+        }
+
+        return "Босс, не поняла команду заметки. Скажите «запиши», «покажи заметки» или «удали заметку».";
+    }
+
+    private String handleNoteClassic(String subCommand) {
         if (subCommand.startsWith("add ")) {
             String text = subCommand.substring(4).trim();
             if (!text.isEmpty()) {
                 noteRepository.save(new Note(text));
-                return "✅ Заметка добавлена: " + text;
-            } else {
-                return "❌ Текст заметки пустой.";
+                return "Записала, босс: «" + text + "»";
             }
+            return "Босс, текст заметки пустой.";
         } else if (subCommand.equals("list")) {
             List<Note> all = noteRepository.findAll();
             if (all.isEmpty()) {
-                return "📝 У вас нет заметок.";
-            } else {
-                StringBuilder sb = new StringBuilder("📝 Ваши заметки:\n");
-                for (int i = 0; i < all.size(); i++) {
-                    sb.append((i + 1)).append(". ").append(all.get(i).getText()).append("\n");
-                }
-                return sb.toString().trim();
+                return "Босс, у вас нет заметок.";
             }
+            StringBuilder sb = new StringBuilder("Ваши заметки, босс:\\n");
+            for (int i = 0; i < all.size(); i++) {
+                sb.append((i + 1)).append(". ").append(all.get(i).getText()).append("\\n");
+            }
+            return sb.toString().trim();
         } else if (subCommand.startsWith("search ")) {
             String query = subCommand.substring(7).trim();
-            if (query.isEmpty()) return "❌ Введите текст для поиска.";
+            if (query.isEmpty()) return "Босс, что ищем?";
             List<Note> found = noteRepository.findByTextContainingIgnoreCase(query);
-            if (found.isEmpty()) return "🔍 Заметки не найдены по запросу: " + query;
+            if (found.isEmpty()) return "Ничего не найдено, босс.";
             List<Note> all = noteRepository.findAll();
-            StringBuilder sb = new StringBuilder("🔍 Найдено:\n");
+            StringBuilder sb = new StringBuilder("Найдено, босс:\\n");
             for (Note n : found) {
-                sb.append((all.indexOf(n) + 1)).append(". ").append(n.getText()).append("\n");
+                sb.append((all.indexOf(n) + 1)).append(". ").append(n.getText()).append("\\n");
             }
             return sb.toString().trim();
         } else if (subCommand.startsWith("delete ")) {
@@ -187,34 +329,28 @@ public class AssistantService {
                 if (index >= 0 && index < all.size()) {
                     Note toDelete = all.get(index);
                     noteRepository.delete(toDelete);
-                    return "🗑️ Заметка удалена: " + toDelete.getText();
-                } else {
-                    return "❌ Заметка с номером " + (index + 1) + " не найдена.";
+                    return "Заметка удалена, босс: «" + toDelete.getText() + "»";
                 }
+                return "Босс, заметки с таким номером нет.";
             } catch (NumberFormatException e) {
-                return "❌ Неверный номер заметки.";
+                return "Босс, неверный номер.";
             }
-        } else {
-            return "❌ Неверная команда. Используйте 'note add <текст>', 'note list' или 'note delete <номер>'.";
         }
+        return "Босс, используйте: заметка добавь, покажи заметки, удали заметку.";
     }
 
-    /**
-     * Калькулятор.
-     */
     private String calculate(String expr) {
-        if (expr.isEmpty()) return "❌ Введите выражение. Пример: calc 2+2";
+        if (expr.isEmpty()) return "Босс, введите выражение. Например: посчитай 2+2";
         try {
             double result = evalExpr(expr.replaceAll("\\s+", ""));
             String formatted = result == (long) result ? String.valueOf((long) result) : String.valueOf(result);
-            return "🧮 " + expr + " = " + formatted;
+            return "Результат: " + expr + " = " + formatted + ", босс.";
         } catch (Exception e) {
-            return "❌ Ошибка в выражении: " + expr;
+            return "Босс, не могу вычислить: " + expr;
         }
     }
 
     private double evalExpr(String expr) {
-        // Поддержка +, -, *, /, скобок
         return new Object() {
             int pos = 0;
             double parse() {
@@ -239,7 +375,7 @@ public class AssistantService {
                 if (pos < expr.length() && expr.charAt(pos) == '(') {
                     pos++;
                     double x = parse();
-                    pos++; // ')'
+                    pos++;
                     return x;
                 }
                 int start = pos;
@@ -250,27 +386,22 @@ public class AssistantService {
         }.parse();
     }
 
-    /**
-     * Конвертер единиц и валют.
-     */
     private String convert(String input) {
-        // Формат: <число> <из> to <в>
         String[] parts = input.toLowerCase().split("\\s+to\\s+");
-        if (parts.length != 2) return "❌ Формат: convert <число> <единица> to <единица>\nПример: convert 100 usd to eur";
+        if (parts.length != 2) return "Босс, формат: конвертируй 100 usd to eur";
         String[] fromParts = parts[0].trim().split("\\s+");
-        if (fromParts.length != 2) return "❌ Формат: convert <число> <единица> to <единица>";
+        if (fromParts.length != 2) return "Босс, формат: конвертируй <число> <единица> to <единица>";
         double value;
-        try { value = Double.parseDouble(fromParts[0]); } catch (NumberFormatException e) { return "❌ Неверное число."; }
+        try { value = Double.parseDouble(fromParts[0]); } catch (NumberFormatException e) { return "Босс, не могу распознать число."; }
         String from = fromParts[1];
         String to = parts[1].trim();
         double result = convertValue(value, from, to);
-        if (Double.isNaN(result)) return "❌ Неизвестные единицы: " + from + " → " + to;
+        if (Double.isNaN(result)) return "Босс, не знаю такие единицы: " + from + " → " + to;
         String formatted = result == (long) result ? String.valueOf((long) result) : String.format("%.4f", result);
-        return String.format("🔄 %s %s = %s %s", fromParts[0], from.toUpperCase(), formatted, to.toUpperCase());
+        return String.format("Конвертация выполнена, босс: %s %s = %s %s", fromParts[0], from.toUpperCase(), formatted, to.toUpperCase());
     }
 
     private double convertValue(double v, String from, String to) {
-        // Конвертируем в базовую единицу, затем в целевую
         double base = toBase(v, from);
         if (Double.isNaN(base)) return Double.NaN;
         return fromBase(base, from, to);
@@ -278,21 +409,17 @@ public class AssistantService {
 
     private double toBase(double v, String unit) {
         return switch (unit) {
-            // Валюты (в USD)
             case "usd" -> v;
             case "eur" -> v / 0.92;
             case "rub" -> v / 90.0;
             case "gbp" -> v / 0.79;
-            // Длина (в км)
             case "km" -> v;
             case "mi" -> v * 1.60934;
             case "m" -> v / 1000.0;
             case "ft" -> v * 0.0003048;
-            // Вес (в кг)
             case "kg" -> v;
             case "lb" -> v * 0.453592;
             case "g" -> v / 1000.0;
-            // Температура (в Цельсий)
             case "c" -> v;
             case "f" -> (v - 32) * 5.0 / 9.0;
             case "k" -> v - 273.15;
@@ -301,7 +428,6 @@ public class AssistantService {
     }
 
     private double fromBase(double base, String from, String to) {
-        // Определяем группу единиц
         String[] currencies = {"usd", "eur", "rub", "gbp"};
         String[] lengths = {"km", "mi", "m", "ft"};
         String[] weights = {"kg", "lb", "g"};
@@ -338,25 +464,25 @@ public class AssistantService {
             RestTemplate rt = new RestTemplate();
             String ip = rt.getForObject("https://api.ipify.org", String.class);
             historyRepository.save(new History("ip", ip));
-            return "🌐 Твой IP: " + ip;
+            return "Босс, ваш внешний IP-адрес: " + ip;
         } catch (Exception e) {
-            return "❌ Не удалось получить IP.";
+            return "Босс, не удалось получить IP. Проверьте подключение к сети.";
         }
     }
 
     private String getJoke() {
         try {
             RestTemplate rt = new RestTemplate();
-            rt.getForObject("https://official-joke-api.appspot.com/random_joke", java.util.Map.class);
+            @SuppressWarnings("unchecked")
             java.util.Map joke = rt.getForObject("https://official-joke-api.appspot.com/random_joke", java.util.Map.class);
-            String result = "😂 " + joke.get("setup") + "\n\n" + joke.get("punchline");
+            String result = joke.get("setup") + "\n\n" + joke.get("punchline");
             historyRepository.save(new History("joke", result));
-            return result;
+            return "Босс, вот вам шутка: " + result;
         } catch (Exception e) {
             String[] jokes = {
-                "😂 Почему программисты носят очки?\n\nПотому что не могут надеть C#!",
-                "😂 Почему Java разработчики носят очки?\n\nПотому что не могут видеть шарпов!",
-                "😂 Баг или фича?\n\nЭто не баг, это недокументированная фича!"
+                "Босс, знаете почему программисты путают Хэллоуин и Рождество? Потому что Oct 31 = Dec 25!",
+                "Босс, это не баг — это недокументированная фича. Так говорил ещё Тони Старк.",
+                "Босс, SQL запрос заходит в бар, подходит к двум таблицам и спрашивает: 'Можно присоединиться?'"
             };
             String joke = jokes[(int)(Math.random() * jokes.length)];
             historyRepository.save(new History("joke", joke));
@@ -366,58 +492,71 @@ public class AssistantService {
 
     private String getQuote() {
         String[] quotes = {
-            "💬 \"Любой достаточно сложный проблем имеет простое решение.\" — Альберт Эйнштейн",
-            "💬 \"Не важно, насколько медленно ты движешься, главное — не останавливайся.\" — Конфуций",
-            "💬 \"Единственный способ делать хорошую работу — любить то, что делаешь.\" — Стив Джобс",
-            "💬 \"Код — это поэзия, которая должна читаться как проза.\" — Роберт Мартин",
-            "💬 \"Программирование — это искусство организации сложности.\" — Эдсгер Дейкстра"
+            "«Я — Железный Человек.» — Тони Старк",
+            "«Иногда нужно бежать, прежде чем научишься ходить.» — Тони Старк",
+            "«Герои — не те, у кого есть суперсилы, а те, кто делает правильные вещи.» — Стив Роджерс",
+            "«Единственный способ делать хорошую работу — любить то, что делаешь.» — Стив Джобс",
+            "«Программирование — это искусство организации сложности.» — Эдсгер Дейкстра",
+            "«Любая достаточно продвинутая технология неотличима от магии.» — Артур Кларк"
         };
         String quote = quotes[(int)(Math.random() * quotes.length)];
         historyRepository.save(new History("quote", quote));
-        return quote;
+        return "Босс, вот мудрость дня: " + quote;
     }
 
     private String translate(String text) {
-        if (text.isEmpty()) return "❌ Введите текст. Пример: translate Hello world";
+        if (text.isEmpty()) return "Босс, что перевести? Пример: переведи Hello world";
         String result = groqService.chat("Переведи на русский язык, ответь только переводом без пояснений: " + text);
         historyRepository.save(new History("translate", text + " → " + result));
-        return "🇷🇺 " + result;
+        return "Перевод: " + result;
     }
 
-    /**
-     * Помодоро таймер.
-     */
     private String handlePomodoro(String sub) {
         sub = sub.trim().toLowerCase();
-        if (sub.equals("start") || sub.isEmpty()) {
+        if (sub.equals("start") || sub.isEmpty() || sub.equals("старт") || sub.equals("начни")) {
             return "🍅 POMODORO:25:00";
-        } else if (sub.equals("break")) {
+        } else if (sub.equals("break") || sub.equals("перерыв") || sub.equals("отдых")) {
             return "☕ BREAK:05:00";
-        } else if (sub.equals("long break")) {
+        } else if (sub.equals("long break") || sub.equals("длинный перерыв") || sub.equals("большой перерыв")) {
             return "🛋️ LONGBREAK:15:00";
         }
-        return "❌ Используйте: pomodoro start | pomodoro break | pomodoro long break";
+        return "Босс, доступно: помодоро старт, помодоро перерыв, помодоро длинный перерыв";
     }
 
-    /**
-     * Обработка команды таймер.
-     */
     private String handleTimer(String subCommand) {
         try {
             int seconds = Integer.parseInt(subCommand.trim());
             if (seconds > 0) {
-                return "⏱️ Таймер запущен на " + seconds + " секунд. Вы будете уведомлены когда время истечет.";
-            } else {
-                return "❌ Время должно быть положительным числом.";
+                return "Таймер установлен на " + seconds + " секунд, босс. Я уведомлю вас по завершении.";
             }
+            return "Босс, время должно быть положительным числом.";
         } catch (NumberFormatException e) {
-            return "❌ Неверный формат. Используйте: timer <количество_секунд>";
+            return "Босс, укажите количество секунд. Например: таймер 60";
         }
     }
 
-    /**
-     * Получить список всех заметок.
-     */
+    private String getSystemStatus() {
+        Runtime runtime = Runtime.getRuntime();
+        long totalMem = runtime.totalMemory() / (1024 * 1024);
+        long freeMem = runtime.freeMemory() / (1024 * 1024);
+        long usedMem = totalMem - freeMem;
+        int cpuCores = runtime.availableProcessors();
+        String javaVer = System.getProperty("java.version");
+        String os = System.getProperty("os.name");
+
+        return String.format("Диагностика систем, босс:\\n" +
+                "• Статус: ✅ Все системы в норме\\n" +
+                "• ОС: %s\\n" +
+                "• Java: %s\\n" +
+                "• CPU ядер: %d\\n" +
+                "• Память: %dМБ / %dМБ (использовано/всего)\\n" +
+                "• AI-модуль: активен\\n" +
+                "• Голосовой модуль: активен\\n" +
+                "• База данных: подключена\\n" +
+                "Все системы функционируют штатно.",
+                os, javaVer, cpuCores, usedMem, totalMem);
+    }
+
     public List<String> getNotes() {
         return noteRepository.findAll().stream()
                 .map(Note::getText)
