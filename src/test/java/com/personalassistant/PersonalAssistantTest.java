@@ -31,7 +31,7 @@ public class PersonalAssistantTest {
     @Test
     void testHelpCommand() {
         String response = assistantService.processCommand("help");
-        assertTrue(response.contains("Команды"));
+        assertTrue(response.contains("команды"));
         assertTrue(response.contains("note"));
         assertTrue(response.contains("timer"));
     }

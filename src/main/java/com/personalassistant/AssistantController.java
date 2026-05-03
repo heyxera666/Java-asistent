@@ -67,7 +67,7 @@ public class AssistantController {
 
     @GetMapping("/history")
     public ResponseEntity<List<Map<String, String>>> getHistory(
-            @RequestParam(defaultValue = "cmd") String type, Authentication auth) {
+            @RequestParam(name = "type", defaultValue = "cmd") String type, Authentication auth) {
         User user = getCurrentUser(auth);
         if (user == null) return ResponseEntity.ok(List.of());
 
@@ -87,7 +87,7 @@ public class AssistantController {
 
     @DeleteMapping("/history")
     public ResponseEntity<Map<String, String>> clearHistory(
-            @RequestParam(defaultValue = "cmd") String type, Authentication auth) {
+            @RequestParam(name = "type", defaultValue = "cmd") String type, Authentication auth) {
         User user = getCurrentUser(auth);
         if (user != null) chatHistoryRepository.deleteByUserAndType(user, type);
         Map<String, String> result = new HashMap<>();

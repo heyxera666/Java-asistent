@@ -29,4 +29,17 @@ public class AuthService implements UserDetailsService {
         userRepository.save(new User(username, email, passwordEncoder.encode(password)));
         return "OK";
     }
+
+    public String resetPassword(String email, String newPassword) {
+        if (email == null || email.isBlank()) return "INVALID_EMAIL";
+        if (newPassword == null || newPassword.length() < 6) return "WEAK_PASSWORD";
+
+        return userRepository.findByEmail(email.trim())
+                .map(user -> {
+                    user.setPassword(passwordEncoder.encode(newPassword));
+                    userRepository.save(user);
+                    return "OK";
+                })
+                .orElse("USER_NOT_FOUND");
+    }
 }
