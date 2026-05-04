@@ -156,6 +156,11 @@ public class AssistantService {
             return getLocation();
         }
 
+        // --- Статус систем ---
+        if (matchesAny(command, "статус систем", "статсус систем", "статус", "статсус", "статистика", "stats", "status")) {
+            return getSystemStatus();
+        }
+
         // --- Футбол ---
         if (matchesAny(command, "самый лучший футбольный клуб", "лучший клуб", "кто чемпионы")) {
             return "Ливерпуль, босс! 🔴";
@@ -570,27 +575,6 @@ public class AssistantService {
         }
     }
 
-    private String getSystemStatus() {
-        Runtime runtime = Runtime.getRuntime();
-        long totalMem = runtime.totalMemory() / (1024 * 1024);
-        long freeMem = runtime.freeMemory() / (1024 * 1024);
-        long usedMem = totalMem - freeMem;
-        int cpuCores = runtime.availableProcessors();
-        String javaVer = System.getProperty("java.version");
-        String os = System.getProperty("os.name");
-
-        return String.format("Диагностика систем, босс:\\n" +
-                "• Статус: ✅ Все системы в норме\\n" +
-                "• ОС: %s\\n" +
-                "• Java: %s\\n" +
-                "• CPU ядер: %d\\n" +
-                "• Память: %dМБ / %dМБ (использовано/всего)\\n" +
-                "• AI-модуль: активен\\n" +
-                "• Голосовой модуль: активен\\n" +
-                "• База данных: подключена\\n" +
-                "Все системы функционируют штатно.",
-                os, javaVer, cpuCores, usedMem, totalMem);
-    }
 
     public List<String> getNotes() {
         return noteRepository.findAll().stream()
@@ -691,6 +675,31 @@ public class AssistantService {
             return "Босс, не удалось точно определить ваши координаты. Проверьте настройки сети.";
         } catch (Exception e) {
             return "Босс, системы геолокации временно недоступны.";
+        }
+    }
+
+    private String getSystemStatus() {
+        try {
+            Runtime runtime = Runtime.getRuntime();
+            long maxMemory = runtime.maxMemory() / (1024 * 1024);
+            long allocatedMemory = runtime.totalMemory() / (1024 * 1024);
+            long freeMemory = runtime.freeMemory() / (1024 * 1024);
+            long usedMemory = allocatedMemory - freeMemory;
+            
+            int processors = runtime.availableProcessors();
+            String os = System.getProperty("os.name");
+            String arch = System.getProperty("os.arch");
+            String javaVer = System.getProperty("java.version");
+
+            return String.format("[TRIGGER_SYS_STATS] Босс, текущее состояние ядра:\\n\\n" +
+                    "🖥️ ОС: %s (%s)\\n" +
+                    "☕ JAVA: v%s\\n" +
+                    "🧠 ЦП: %d потоков доступно\\n" +
+                    "💾 ОЗУ: %d МБ / %d МБ (Макс: %d МБ)\\n" +
+                    "📈 ЗАГРУЗКА: Все системы работают стабильно.",
+                    os, arch, javaVer, processors, usedMemory, allocatedMemory, maxMemory);
+        } catch (Exception e) {
+            return "Босс, не удалось получить данные от системного монитора.";
         }
     }
 }

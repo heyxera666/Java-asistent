@@ -566,3 +566,70 @@ body::after {
     color: var(--text-dim);
     margin-top: 10px;
 }
+
+/* === STATS OVERLAY === */
+.stats-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    background: rgba(0, 5, 10, 0.85);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: opacity 0.5s;
+}
+
+.stats-hud {
+    width: 400px;
+    padding: 30px;
+    background: rgba(0, 30, 60, 0.6);
+    border: 1px solid var(--primary);
+    border-radius: 4px;
+    box-shadow: 0 0 30px rgba(0, 212, 255, 0.2);
+    font-family: 'Orbitron', sans-serif;
+}
+
+.stats-title {
+    color: var(--primary);
+    font-size: 18px;
+    letter-spacing: 3px;
+    margin-bottom: 25px; text-align: center;
+    border-bottom: 1px solid var(--border-glow);
+    padding-bottom: 10px;
+}
+
+.stat-row { margin-bottom: 20px; }
+
+.stat-label {
+    font-size: 10px;
+    color: var(--text-dim);
+    margin-bottom: 8px;
+    letter-spacing: 1px;
+}
+
+.stat-bar {
+    height: 6px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.stat-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--primary-dim), var(--primary));
+    box-shadow: 0 0 10px var(--primary);
+    animation: bar-load 1.5s ease-out;
+}
+
+@keyframes bar-load {
+    from { width: 0; }
+}
+
+.stats-status {
+    text-align: center;
+    font-size: 11px;
+    color: #00ff88;
+    margin-top: 20px;
+    letter-spacing: 2px;
+}

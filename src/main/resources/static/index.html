@@ -255,6 +255,7 @@ async function sendCommand() {
         const data = await res.json();
         const response = data.response || "Босс, возникла заминка в моих цепях. Не получила внятного ответа.";
 
+        console.log("Response received:", response);
         if (response.includes('[TRIGGER_SELF_DESTRUCT]')) {
             const cleanMsg = response.replace('[TRIGGER_SELF_DESTRUCT]', '').trim();
             addMessage('friday', cleanMsg);
@@ -269,6 +270,12 @@ async function sendCommand() {
         } else if (response.includes('[TRIGGER_GEOLOCATION]')) {
             const cleanMsg = response.replace('[TRIGGER_GEOLOCATION]', '').trim();
             startGeoAnimation(() => {
+                addMessage('friday', cleanMsg);
+                speak(cleanMsg);
+            });
+        } else if (response.includes('[TRIGGER_SYS_STATS]')) {
+            const cleanMsg = response.replace('[TRIGGER_SYS_STATS]', '').trim();
+            startStatsAnimation(() => {
                 addMessage('friday', cleanMsg);
                 speak(cleanMsg);
             });
@@ -527,6 +534,39 @@ function startGeoAnimation(callback) {
             callback();
         }, 1000);
     }, 2500);
+}
+
+// === STATS ANIMATION ===
+function startStatsAnimation(callback) {
+    const overlay = document.createElement('div');
+    overlay.className = 'stats-overlay';
+    overlay.innerHTML = `
+        <div class="stats-hud">
+            <div class="stats-title">CORE SYSTEM DIAGNOSTICS</div>
+            <div class="stat-row">
+                <div class="stat-label">CPU CORE LOAD</div>
+                <div class="stat-bar"><div class="stat-fill" style="width: 45%"></div></div>
+            </div>
+            <div class="stat-row">
+                <div class="stat-label">MEMORY USAGE</div>
+                <div class="stat-bar"><div class="stat-fill" style="width: 62%"></div></div>
+            </div>
+            <div class="stat-row">
+                <div class="stat-label">NET UPLINK</div>
+                <div class="stat-bar"><div class="stat-fill" style="width: 88%"></div></div>
+            </div>
+            <div class="stats-status">ALL SYSTEMS OPTIMAL</div>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+    
+    setTimeout(() => {
+        overlay.style.opacity = '0';
+        setTimeout(() => {
+            overlay.remove();
+            callback();
+        }, 500);
+    }, 3000);
 }
 
 initRecognition();
