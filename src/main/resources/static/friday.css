@@ -385,3 +385,184 @@ body::after {
     .voice-btn { width: 60px; height: 60px; font-size: 24px; }
     .status-bar { padding: 6px 16px; gap: 12px; }
 }
+
+.embedded-video {
+    margin-top: 12px;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid var(--border-glow);
+    box-shadow: 0 0 15px rgba(0, 212, 255, 0.2);
+    background: #000;
+}
+
+/* === SELF DESTRUCT EFFECTS === */
+.self-destruct-active {
+    animation: destruct-shake 0.1s infinite, destruct-red-glow 1s infinite;
+}
+
+@keyframes destruct-shake {
+    0% { transform: translate(0,0); }
+    25% { transform: translate(2px, 2px); }
+    50% { transform: translate(-2px, -2px); }
+    75% { transform: translate(2px, -2px); }
+    100% { transform: translate(0,0); }
+}
+
+@keyframes destruct-red-glow {
+    0%, 100% { box-shadow: inset 0 0 50px rgba(255,0,0,0.1); }
+    50% { box-shadow: inset 0 0 150px rgba(255,0,0,0.4); background-color: rgba(50,0,0,0.2); }
+}
+
+.destruct-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: rgba(255,0,0,0.1);
+    backdrop-filter: blur(2px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    font-family: 'Orbitron', sans-serif;
+}
+
+.destruct-num {
+    font-size: 120px;
+    font-weight: 900;
+    color: #ff0000;
+    text-shadow: 0 0 30px #ff0000;
+    animation: pulse-num 0.5s infinite;
+}
+
+@keyframes pulse-num {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+}
+
+.destruct-label {
+    font-size: 20px;
+    color: #ff4444;
+    letter-spacing: 5px;
+    margin-top: 20px;
+}
+
+.destruct-final {
+    font-size: 40px;
+    color: #ff0000;
+    letter-spacing: 10px;
+    text-shadow: 0 0 20px #ff0000;
+}
+
+/* === SCAN OVERLAY === */
+.scan-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    background: rgba(0, 10, 20, 0.9);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Orbitron', sans-serif;
+    color: var(--primary);
+}
+
+.scan-line {
+    position: absolute;
+    width: 100%;
+    height: 2px;
+    background: var(--primary);
+    box-shadow: 0 0 15px var(--primary);
+    top: 0;
+    animation: scan-move 2s linear infinite;
+}
+
+@keyframes scan-move {
+    from { top: 0; }
+    to { top: 100%; }
+}
+
+.scan-text {
+    font-size: 24px;
+    letter-spacing: 4px;
+    margin-bottom: 30px;
+    text-shadow: 0 0 10px var(--primary);
+}
+
+.scan-text.success { color: #00ff88; text-shadow: 0 0 10px #00ff88; }
+
+.scan-files {
+    font-family: monospace;
+    font-size: 14px;
+    color: var(--text-dim);
+    text-align: left;
+    width: 300px;
+    height: 200px;
+    overflow: hidden;
+}
+
+/* === GEO OVERLAY === */
+.geo-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    background: radial-gradient(circle, rgba(0,40,80,0.9) 0%, rgba(0,5,10,0.95) 100%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Orbitron', sans-serif;
+}
+
+.radar {
+    width: 200px;
+    height: 200px;
+    border: 2px solid var(--primary-dim);
+    border-radius: 50%;
+    position: relative;
+    margin-bottom: 30px;
+    overflow: hidden;
+}
+
+.radar-circle {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    border: 1px solid rgba(0, 212, 255, 0.2);
+    border-radius: 50%;
+}
+.radar-circle:nth-child(2) { width: 150px; height: 150px; }
+.radar-circle:nth-child(3) { width: 100px; height: 100px; }
+.radar-circle:nth-child(4) { width: 50px; height: 50px; }
+
+.radar-line {
+    position: absolute;
+    width: 50%;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--primary));
+    top: 50%;
+    left: 50%;
+    transform-origin: left center;
+    animation: radar-spin 2s linear infinite;
+}
+
+@keyframes radar-spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.geo-text {
+    font-size: 18px;
+    color: var(--primary);
+    letter-spacing: 3px;
+}
+
+.geo-text.success { color: #00ff88; }
+
+.geo-status {
+    font-size: 10px;
+    color: var(--text-dim);
+    margin-top: 10px;
+}

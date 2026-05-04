@@ -255,8 +255,27 @@ async function sendCommand() {
         const data = await res.json();
         const response = data.response || "Босс, возникла заминка в моих цепях. Не получила внятного ответа.";
 
-        addMessage('friday', response);
-        speak(response);
+        if (response.includes('[TRIGGER_SELF_DESTRUCT]')) {
+            const cleanMsg = response.replace('[TRIGGER_SELF_DESTRUCT]', '').trim();
+            addMessage('friday', cleanMsg);
+            speak(cleanMsg);
+            startSelfDestruct();
+        } else if (response.includes('[TRIGGER_SCAN]')) {
+            const cleanMsg = response.replace('[TRIGGER_SCAN]', '').trim();
+            startScanAnimation(() => {
+                addMessage('friday', cleanMsg);
+                speak(cleanMsg);
+            });
+        } else if (response.includes('[TRIGGER_GEOLOCATION]')) {
+            const cleanMsg = response.replace('[TRIGGER_GEOLOCATION]', '').trim();
+            startGeoAnimation(() => {
+                addMessage('friday', cleanMsg);
+                speak(cleanMsg);
+            });
+        } else {
+            addMessage('friday', response);
+            speak(response);
+        }
 
         // Handle timer
         if (input.toLowerCase().match(/^(timer|таймер)\s+\d+/)) {
@@ -308,9 +327,15 @@ async function loadHistory() {
 loadHistory();
 
 // === CLEAR ===
-function clearChat() {
-    document.getElementById('chatArea').innerHTML = '';
-    addMessage('friday', 'Чат очищен, босс. Чем могу помочь?');
+async function clearChat() {
+    try {
+        await fetch('/api/assistant/history?type=' + currentMode, { method: 'DELETE' });
+        document.getElementById('chatArea').innerHTML = '';
+        addMessage('friday', 'История чата и база данных очищены, босс. Теперь всё чисто.');
+    } catch(e) {
+        document.getElementById('chatArea').innerHTML = '';
+        addMessage('friday', 'Чат очищен локально, но произошла ошибка при удалении из базы.');
+    }
 }
 
 // === TIMER ===
@@ -383,6 +408,127 @@ document.getElementById('inputField').addEventListener('keydown', function(e) {
 });
 
 // === INIT RECOGNITION ===
+// === SELF DESTRUCT ===
+function startSelfDestruct() {
+    const app = document.querySelector('.friday-app');
+    const statusItems = document.querySelectorAll('.status-dot');
+    
+    // Phase 1: Alert
+    app.classList.add('self-destruct-active');
+    statusItems.forEach(dot => { dot.style.background = '#ff0000'; dot.style.boxShadow = '0 0 10px #ff0000'; });
+    
+    let count = 5;
+    const cdDiv = document.createElement('div');
+    cdDiv.className = 'destruct-overlay';
+    document.body.appendChild(cdDiv);
+
+    const timer = setInterval(() => {
+        if (count > 0) {
+            cdDiv.innerHTML = `<div class="destruct-num">${count}</div><div class="destruct-label">SYSTEM PURGE IN PROGRESS</div>`;
+            playBeepHigh();
+            count--;
+        } else {
+            clearInterval(timer);
+            // Phase 2: Total Failure
+            cdDiv.innerHTML = `<div class="destruct-final">SYSTEM OFFLINE</div>`;
+            app.style.filter = 'brightness(0) blur(20px)';
+            app.style.transform = 'scale(0.8)';
+            app.style.opacity = '0';
+            document.body.style.background = '#000';
+            playExplosion();
+            
+            setTimeout(() => {
+                location.reload(); // Re-boot after 5 seconds
+            }, 5000);
+        }
+    }, 1000);
+}
+
+function playBeepHigh() {
+    try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain); gain.connect(ctx.destination);
+        osc.frequency.value = 800; osc.type = 'square';
+        gain.gain.setValueAtTime(0.2, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+        osc.start(); osc.stop(ctx.currentTime + 0.3);
+    } catch(e) {}
+}
+
+function playExplosion() {
+    try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain); gain.connect(ctx.destination);
+        osc.frequency.setValueAtTime(100, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(0.01, ctx.currentTime + 2);
+        osc.type = 'sawtooth';
+        gain.gain.setValueAtTime(0.5, ctx.currentTime);
+        gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 2);
+        osc.start(); osc.stop(ctx.currentTime + 2);
+    } catch(e) {}
+}
+
+// === SCAN ANIMATION ===
+function startScanAnimation(callback) {
+    const overlay = document.createElement('div');
+    overlay.className = 'scan-overlay';
+    overlay.innerHTML = `
+        <div class="scan-line"></div>
+        <div class="scan-text">INITIALIZING DEEP SCAN...</div>
+        <div class="scan-files" id="scanFiles"></div>
+    `;
+    document.body.appendChild(overlay);
+    
+    const files = ['AssistantService.java', 'AssistantController.java', 'SecurityConfig.java', 'PersonalAssistant.java', 'pom.xml', 'application.properties', 'friday.css', 'index.html'];
+    const filesDiv = document.getElementById('scanFiles');
+    
+    let i = 0;
+    const interval = setInterval(() => {
+        const f = document.createElement('div');
+        f.textContent = '> SCANNING: ' + files[Math.floor(Math.random() * files.length)];
+        filesDiv.prepend(f);
+        if (filesDiv.children.length > 10) filesDiv.lastChild.remove();
+        i++;
+        if (i > 20) {
+            clearInterval(interval);
+            overlay.innerHTML = '<div class="scan-text success">SCAN COMPLETE. DATA DECRYPTED.</div>';
+            setTimeout(() => {
+                overlay.remove();
+                callback();
+            }, 1000);
+        }
+    }, 100);
+}
+
+// === GEO ANIMATION ===
+function startGeoAnimation(callback) {
+    const overlay = document.createElement('div');
+    overlay.className = 'geo-overlay';
+    overlay.innerHTML = `
+        <div class="radar">
+            <div class="radar-line"></div>
+            <div class="radar-circle"></div>
+            <div class="radar-circle"></div>
+            <div class="radar-circle"></div>
+        </div>
+        <div class="geo-text">UPLINKING TO SATELLITE...</div>
+        <div class="geo-status">ENCRYPTED SIGNAL DETECTED</div>
+    `;
+    document.body.appendChild(overlay);
+    
+    setTimeout(() => {
+        overlay.innerHTML = '<div class="geo-text success">LOCATION LOCKED.</div>';
+        setTimeout(() => {
+            overlay.remove();
+            callback();
+        }, 1000);
+    }, 2500);
+}
+
 initRecognition();
 </script>
 </body>

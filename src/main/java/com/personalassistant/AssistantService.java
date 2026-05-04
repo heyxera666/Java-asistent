@@ -8,6 +8,11 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.awt.*;
+import java.awt.image.BufferedImage;
+import javax.imageio.ImageIO;
+import java.io.File;
+import java.net.URI;
 
 /**
  * Сервис F.R.I.D.A.Y. — обработка голосовых и текстовых команд.
@@ -124,6 +129,36 @@ public class AssistantService {
         if (matchesAny(command, "статус", "status", "система", "диагностика",
                 "как дела", "всё ок", "системы")) {
             return getSystemStatus();
+        }
+
+        // --- Скриншот ---
+        if (matchesAny(command, "скриншот", "screenshot", "сделай снимок", "снимок экрана")) {
+            return takeScreenshot();
+        }
+
+        // --- Гимн ---
+        if (matchesAny(command, "гимн", "включи гимн", "казахстан", "гимн казахстана")) {
+            return playAnthem();
+        }
+
+        // --- Самоуничтожение ---
+        if (matchesAny(command, "самоуничтожение", "self-destruct", "протокол 11", "удали себя")) {
+            return "[TRIGGER_SELF_DESTRUCT] Босс, протокол самоуничтожения активирован. Было честью работать с вами. Прощайте.";
+        }
+
+        // --- Глубокое сканирование ---
+        if (matchesAny(command, "сканируй", "сканирование", "анализ проекта", "scan", "deep scan")) {
+            return scanProject();
+        }
+
+        // --- Геолокация ---
+        if (matchesAny(command, "где я", "геолокация", "координаты", "местоположение", "where am i")) {
+            return getLocation();
+        }
+
+        // --- Футбол ---
+        if (matchesAny(command, "самый лучший футбольный клуб", "лучший клуб", "кто чемпионы")) {
+            return "Ливерпуль, босс! 🔴";
         }
 
         // --- Кто ты ---
@@ -565,5 +600,97 @@ public class AssistantService {
 
     public void clearNotes() {
         noteRepository.deleteAll();
+    }
+
+    private String takeScreenshot() {
+        try {
+            // Принудительно устанавливаем headless в false
+            System.setProperty("java.awt.headless", "false");
+
+            File directory = new File("screenshots");
+            if (!directory.exists()) directory.mkdirs();
+
+            String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"));
+            String fileName = "screenshot_" + timestamp + ".png";
+            File outputFile = new File(directory, fileName);
+
+            // Проверка на наличие графической среды
+            if (GraphicsEnvironment.isHeadless()) {
+                return "Босс, система работает в безголовом режиме. Скриншот невозможен.";
+            }
+
+            Rectangle screenRect = new Rectangle(Toolkit.getDefaultToolkit().getScreenSize());
+            Robot robot = new Robot();
+            BufferedImage capture = robot.createScreenCapture(screenRect);
+            
+            ImageIO.write(capture, "png", outputFile);
+
+            return "Скриншот успешно сделан, босс! Файл сохранен в папку 'screenshots' как: " + fileName;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "Ошибка при создании скриншота: " + (e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName());
+        }
+    }
+
+    private String playAnthem() {
+        String videoId = "Lbdus4ySlG0";
+        return "Алға, Қазақстан! Включаю гимн прямо в чате, босс:\\n\\n" +
+               "<div class='embedded-video'>" +
+               "<iframe width='100%' height='240' src='https://www.youtube.com/embed/" + videoId + "' " +
+               "frameborder='0' allow='accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture' allowfullscreen></iframe>" +
+               "</div>";
+    }
+
+    private String scanProject() {
+        try {
+            File root = new File("src/main/java");
+            final long[] fileCount = {0};
+            final long[] lineCount = {0};
+            List<String> classNames = new ArrayList<>();
+
+            java.nio.file.Files.walk(root.toPath())
+                .filter(java.nio.file.Files::isRegularFile)
+                .filter(p -> p.toString().endsWith(".java"))
+                .forEach(p -> {
+                    fileCount[0]++;
+                    classNames.add(p.getFileName().toString());
+                    try {
+                        lineCount[0] += java.nio.file.Files.lines(p).count();
+                    } catch (Exception e) {}
+                });
+
+            StringBuilder sb = new StringBuilder("[TRIGGER_SCAN] Босс, глубокое сканирование систем завершено:\\n\\n");
+            sb.append("📋 ОБЪЕКТ: Проект «Personal Assistant»\\n");
+            sb.append("📂 СТРУКТУРА: ").append(fileCount[0]).append(" Java-классов обнаружено\\n");
+            sb.append("🔢 ОБЪЕМ: ").append(lineCount[0]).append(" строк чистого кода\\n");
+            sb.append("⚡ СТАТУС: Все модули функционируют в штатном режиме.\\n\\n");
+            sb.append("Последние просканированные модули: ").append(classNames.stream().limit(3).collect(Collectors.joining(", ")));
+
+            return sb.toString();
+        } catch (Exception e) {
+            return "Босс, возникла ошибка при доступе к исходному коду: " + e.getMessage();
+        }
+    }
+
+    private String getLocation() {
+        try {
+            RestTemplate rt = new RestTemplate();
+            @SuppressWarnings("unchecked")
+            java.util.Map<String, Object> data = rt.getForObject("http://ip-api.com/json/", java.util.Map.class);
+            
+            if (data != null && "success".equals(data.get("status"))) {
+                return String.format("[TRIGGER_GEOLOCATION] Босс, спутниковое наведение завершено:\\n" +
+                        "📍 МЕСТО: %s, %s\\n" +
+                        "🌐 КООРДИНАТЫ: %s, %s\\n" +
+                        "🏢 ПРОВАЙДЕР: %s\\n" +
+                        "Ваше текущее местоположение подтверждено. Связь стабильна.",
+                        data.get("city"), data.get("country"),
+                        data.get("lat"), data.get("lon"),
+                        data.get("isp"));
+            }
+            return "Босс, не удалось точно определить ваши координаты. Проверьте настройки сети.";
+        } catch (Exception e) {
+            return "Босс, системы геолокации временно недоступны.";
+        }
     }
 }

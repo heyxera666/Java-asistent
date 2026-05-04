@@ -39,8 +39,14 @@ public class AssistantController {
 
         User user = getCurrentUser(auth);
         if (user != null) {
-            chatHistoryRepository.save(new ChatHistory(user, "user", "cmd", input));
-            chatHistoryRepository.save(new ChatHistory(user, "assistant", "cmd", response));
+            // Не сохраняем в базу команды с плеером или спец-эффектами, чтобы они не срабатывали при перезагрузке
+            boolean isInteractive = response.contains("<iframe") || 
+                                   response.contains("[TRIGGER_");
+            
+            if (!isInteractive) {
+                chatHistoryRepository.save(new ChatHistory(user, "user", "cmd", input));
+                chatHistoryRepository.save(new ChatHistory(user, "assistant", "cmd", response));
+            }
         }
 
         Map<String, String> result = new HashMap<>();
