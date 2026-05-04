@@ -102,6 +102,11 @@ public class AssistantService {
             return handlePomodoro(sub);
         }
 
+        // --- Космос ---
+        if (matchesAny(command, "космос", "фото дня", "фото из космоса", "марс", "mars", "space")) {
+            return getSpacePhoto();
+        }
+
         // --- IP ---
         if (matchesAny(command, "ip", "мой ip", "айпи", "мой айпи", "покажи ip")) {
             return getIP();
@@ -159,6 +164,11 @@ public class AssistantService {
         // --- Статус систем ---
         if (matchesAny(command, "статус систем", "статсус систем", "статус", "статсус", "статистика", "stats", "status")) {
             return getSystemStatus();
+        }
+
+        // --- Космос ---
+        if (matchesAny(command, "космос", "фото дня", "фото из космоса", "марс", "mars", "space")) {
+            return getSpacePhoto();
         }
 
         // --- Футбол ---
@@ -700,6 +710,32 @@ public class AssistantService {
                     os, arch, javaVer, processors, usedMemory, allocatedMemory, maxMemory);
         } catch (Exception e) {
             return "Босс, не удалось получить данные от системного монитора.";
+        }
+    }
+
+    private String getSpacePhoto() {
+        try {
+            RestTemplate rt = new RestTemplate();
+            // APOD (Astronomy Picture of the Day) - самый стабильный API NASA
+            String url = "https://api.nasa.gov/planetary/apod?api_key=DEMO_KEY";
+            @SuppressWarnings("unchecked")
+            java.util.Map<String, Object> data = rt.getForObject(url, java.util.Map.class);
+            
+            if (data != null && data.containsKey("url")) {
+                String imgUrl = (String) data.get("url");
+                String title = (String) data.get("title");
+                String date = (String) data.get("date");
+                
+                return String.format("[TRIGGER_MARS_PHOTO] Босс, получены данные из глубокого космоса:\\n\\n" +
+                        "🌌 ОБЪЕКТ: %s\\n" +
+                        "📅 ДАТА: %s\\n" +
+                        "🔭 СТАТУС: Изображение дня от NASA расшифровано.\\n" +
+                        "Вывожу на главный экран.", title, date) + 
+                        "|||" + imgUrl;
+            }
+            return "Босс, не удалось получить данные из космоса. Видимо, мы в зоне радиомолчания.";
+        } catch (Exception e) {
+            return "Босс, возникла проблема при связи with NASA: " + e.getMessage();
         }
     }
 }

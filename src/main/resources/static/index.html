@@ -279,6 +279,14 @@ async function sendCommand() {
                 addMessage('friday', cleanMsg);
                 speak(cleanMsg);
             });
+        } else if (response.includes('[TRIGGER_MARS_PHOTO]')) {
+            const parts = response.split('|||');
+            const cleanMsg = parts[0].replace('[TRIGGER_MARS_PHOTO]', '').trim();
+            const imgUrl = parts[1];
+            startSpaceAnimation(() => {
+                addMessage('friday', cleanMsg + `<br><div class='mars-photo-container'><img src='${imgUrl}' class='mars-photo'></div>`);
+                speak(cleanMsg);
+            });
         } else {
             addMessage('friday', response);
             speak(response);
@@ -567,6 +575,27 @@ function startStatsAnimation(callback) {
             callback();
         }, 500);
     }, 3000);
+}
+
+// === SPACE ANIMATION ===
+function startSpaceAnimation(callback) {
+    const overlay = document.createElement('div');
+    overlay.className = 'space-overlay';
+    overlay.innerHTML = `
+        <div class="stars"></div>
+        <div class="nebula"></div>
+        <div class="space-text">ESTABLISHING INTERPLANETARY UPLINK...</div>
+        <div class="space-status">RECEIVING NASA DATA PACKETS</div>
+    `;
+    document.body.appendChild(overlay);
+    
+    setTimeout(() => {
+        overlay.style.opacity = '0';
+        setTimeout(() => {
+            overlay.remove();
+            callback();
+        }, 500);
+    }, 2000);
 }
 
 initRecognition();
