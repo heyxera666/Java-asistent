@@ -35,7 +35,10 @@
     <!-- CHAT -->
     <div class="chat-area" id="chatArea">
         <div class="msg friday">
-            <div class="msg-label">F.R.I.D.A.Y.</div>
+            <div class="msg-header">
+                <div class="msg-label">F.R.I.D.A.Y.</div>
+                <div class="msg-time" id="initialTime">--:--</div>
+            </div>
             <div class="msg-bubble">Здравствуйте, босс. Все системы активны и готовы к работе. Вы можете говорить голосом или печатать команды.</div>
         </div>
     </div>
@@ -83,6 +86,7 @@ function updateClock() {
 }
 updateClock();
 setInterval(updateClock, 1000);
+document.getElementById('initialTime').textContent = new Date().toLocaleTimeString('ru-RU', {hour:'2-digit', minute:'2-digit'});
 
 // === AUDIO VISUALIZER ===
 (function initViz() {
@@ -311,21 +315,41 @@ async function sendCommand() {
 }
 
 // === MESSAGES ===
-function addMessage(sender, text) {
+function addMessage(sender, text, time) {
     const area = document.getElementById('chatArea');
     const div = document.createElement('div');
     div.className = 'msg ' + (sender === 'user' ? 'user' : 'friday');
 
+    // Create label and time container
+    const header = document.createElement('div');
+    header.className = 'msg-header';
+
     const label = document.createElement('div');
     label.className = 'msg-label';
     label.textContent = sender === 'user' ? 'БОСС' : 'F.R.I.D.A.Y.';
+
+    const timeDiv = document.createElement('div');
+    timeDiv.className = 'msg-time';
+    
+    if (time) {
+        // Format ISO string from backend
+        const date = new Date(time);
+        timeDiv.textContent = date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+    } else {
+        // New message
+        const now = new Date();
+        timeDiv.textContent = now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+    }
+
+    header.appendChild(label);
+    header.appendChild(timeDiv);
 
     const bubble = document.createElement('div');
     bubble.className = 'msg-bubble';
     const cleanText = text || "Босс, произошла системная ошибка при выводе сообщения.";
     bubble.innerHTML = cleanText.replace(/\\n/g, '<br>').replace(/\n/g, '<br>');
 
-    div.appendChild(label);
+    div.appendChild(header);
     div.appendChild(bubble);
     area.appendChild(div);
     area.scrollTop = area.scrollHeight;
@@ -336,7 +360,7 @@ async function loadHistory() {
     try {
         const res = await fetch('/api/assistant/history?type=' + currentMode);
         const history = await res.json();
-        history.forEach(h => addMessage(h.role === 'user' ? 'user' : 'friday', h.message));
+        history.forEach(h => addMessage(h.role === 'user' ? 'user' : 'friday', h.message, h.createdAt));
     } catch(e) {}
 }
 loadHistory();
@@ -356,13 +380,8 @@ async function clearChat() {
 // === TIMER ===
 function startTimer(seconds) {
     let remaining = seconds;
-    const area = document.getElementById('chatArea');
-    const div = document.createElement('div');
-    div.className = 'msg friday';
-    div.innerHTML = '<div class="msg-label">F.R.I.D.A.Y.</div><div class="msg-bubble"><div class="timer-display" id="timerCount">' + remaining + 's</div></div>';
-    area.appendChild(div);
-    area.scrollTop = area.scrollHeight;
-
+    addMessage('friday', '<div class="timer-display" id="timerCount">' + remaining + 's</div>');
+    
     if (timerInterval) clearInterval(timerInterval);
     timerInterval = setInterval(() => {
         remaining--;

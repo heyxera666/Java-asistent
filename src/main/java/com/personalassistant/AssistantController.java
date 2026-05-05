@@ -84,6 +84,7 @@ public class AssistantController {
                     Map<String, String> m = new HashMap<>();
                     m.put("role", h.getRole());
                     m.put("message", h.getMessage());
+                    m.put("createdAt", h.getCreatedAt().toString());
                     return m;
                 })
                 .collect(Collectors.toList());

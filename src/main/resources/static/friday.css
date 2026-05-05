@@ -184,12 +184,31 @@ body::after {
     color: var(--text);
 }
 
+.msg-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 4px;
+    gap: 12px;
+}
+
+.msg.user .msg-header {
+    flex-direction: row-reverse;
+}
+
 .msg-label {
     font-size: 10px;
     font-family: 'Orbitron', sans-serif;
     letter-spacing: 1px;
-    margin-bottom: 4px;
     text-transform: uppercase;
+}
+
+.msg-time {
+    font-size: 9px;
+    font-family: 'Orbitron', sans-serif;
+    color: var(--text-dim);
+    opacity: 0.7;
+    letter-spacing: 0.5px;
 }
 
 .msg.user .msg-label { color: #5599cc; text-align: right; }
