@@ -55,6 +55,7 @@
         <button class="mode-tab active" id="tabCmd" onclick="setMode('cmd')">⌨ Команды</button>
         <button class="mode-tab" id="tabAi" onclick="setMode('ai')">🧠 AI Чат</button>
         <button class="mode-tab" onclick="clearChat()">🗑 Очистить</button>
+        <button class="mode-tab danger" onclick="confirmSelfDestruct()">💀 Самоликвидация</button>
     </div>
 
     <!-- INPUT -->
@@ -440,6 +441,13 @@ function playBeep() {
 document.getElementById('inputField').addEventListener('keydown', function(e) {
     if (e.key === 'Enter' && !isLoading) sendCommand();
 });
+
+// === CONFIRM SELF DESTRUCT ===
+function confirmSelfDestruct() {
+    if (confirm("ВНИМАНИЕ: Запустить протокол самоликвидации систем П.Я.Т.Н.И.Ц.Ы.?\nВсе временные данные будут стерты.")) {
+        startSelfDestruct();
+    }
+}
 
 // === INIT RECOGNITION ===
 // === SELF DESTRUCT ===
